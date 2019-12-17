@@ -1,4 +1,4 @@
-#include "digest.h"
+#include "hash/digest.h"
 
 int main(int argc, char const *argv[])
 {
