@@ -75,3 +75,42 @@ int incremental(int maxWordLen,bool infinity, Range* ranges,int rangesLen){
 
     return 0;
 }
+
+
+char* incrementalNextWord(char* word, Range* ranges,int rangesLen){
+    int wordlen = strlen(word);
+
+    bool isLast = true;
+    for (int i = 0; i < wordlen; i++){
+        if(word[i] != ranges[rangesLen-1].max) isLast = false;
+    }
+
+    if(isLast) return NULL;
+
+    int k;
+    for (k = 0; k < rangesLen-1; k++){
+        if(word[wordlen-1] == ranges[k].max){
+            word[wordlen-1] = ranges[k+1].min;
+            return word;
+        }
+    }
+
+
+
+    if(word[wordlen-1] == ranges[rangesLen-1].max){
+        for (int i = wordlen-1; i >= 0; i--){
+            if(word[i] == ranges[rangesLen-1].max){
+                word[i] = ranges[0].min;
+            }
+            else {
+                word[i]++;
+                return word;
+            }
+        }
+    }
+
+    if(k==rangesLen-1){
+        word[wordlen-1]++;
+        return word;
+    }
+}
