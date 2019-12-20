@@ -21,6 +21,6 @@ char* sha256(char* plaintext, char* salt);
 char* sha1(char* plaintext, char* salt);
 bool setDebugPrints(bool enabled);
 char* unixCrypt(char* key, char* salt);
-HASH_TYPES getTypeHash(pass obj);
+HASH_TYPES getHashType(pass obj);
 
 #include "digest.c"
