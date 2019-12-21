@@ -1,4 +1,3 @@
-
 bool debugPrintFlag = false;
 
 bool setDebugPrints(bool enabled){
@@ -26,8 +25,7 @@ char* prepSaltedKey(char* key, char* salt){
 
 }
 
-char* md5(char* plaintext, char* salt) 
-{
+char* md5(char* plaintext, char* salt) {
     unsigned char digest[MD5_DIGEST_LENGTH];
 
     char* salted = prepSaltedKey(plaintext,salt);
@@ -51,8 +49,7 @@ char* md5(char* plaintext, char* salt)
     return mdString;
 }
 
-char* sha1(char* plaintext, char* salt)
-{
+char* sha1(char* plaintext, char* salt){
     unsigned char digest[SHA_DIGEST_LENGTH];
     char* salted = prepSaltedKey(plaintext,salt);
     
@@ -118,6 +115,25 @@ char* digestFactory(char* key, char* salt, HASH_TYPES hashType){
     if(hashType == SHA256_t) return sha256(key,salt);
     if(hashType == CRYPT_t) return unixCrypt(key,salt);
     else return NULL;
-
 }
 
+HASH_TYPES getTypeHash(Password obj){
+    HASH_TYPES hashType = NONETYPE_t ;
+
+    char* hash = obj.hash;
+
+    hash = hash + (int)((char *)strchr(hash, ':') - hash) +1;
+
+    int index = (int)((char *)strchr(hash, ':') - hash);
+
+    if( index == CRYPT_DIGEST_LENGTH ){
+        hashType = CRYPT_t;
+    }else if( index == SHA_DIGEST_LENGTH ){
+        hashType = SHA1_t;
+    }else if( index == SHA256_DIGEST_LENGTH ){
+        hashType = SHA256_t;
+    }else if( index == MD5_DIGEST_LENGTH ){
+        hashType = MD5_t;
+    }
+    return hashType;
+}

@@ -56,6 +56,17 @@ int main(int argc, char *argv[]){
 
     // Termina MPI
     // MPI_Finalize();
-
     return 0;
+}
+
+int main(int argc, char const *argv[])
+{
+    setDebugPrints(1);
+
+    Password obj;
+    obj.username = "user";
+    obj.hash = "mmeiners:e7hvcqLV0YUmQ:53212:532:Cpr E 532 Student:/home/issl/532/mmeiners:/bin/tcsh";
+
+    free(digestFactory("ciao","ab", getTypeHash(obj)));
+
 }
