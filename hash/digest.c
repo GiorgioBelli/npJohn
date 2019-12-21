@@ -1,16 +1,3 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-
-#define _XOPEN_SOURCE
-#define CRYPT_DIGEST_LENGTH 13
-// #include <unistd.h>
-#include <crypt.h>
-
 bool debugPrintFlag = false;
 
 bool setDebugPrints(bool enabled){
@@ -130,10 +117,10 @@ char* digestFactory(char* key, char* salt, HASH_TYPES hashType){
     else return NULL;
 }
 
-HASH_TYPES getTypeHash(pass obj){
+HASH_TYPES getTypeHash(Password obj){
     HASH_TYPES hashType = NONETYPE_t ;
 
-    char* hash = obj.cryptHash;
+    char* hash = obj.hash;
 
     hash = hash + (int)((char *)strchr(hash, ':') - hash) +1;
 
