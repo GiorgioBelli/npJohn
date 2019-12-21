@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-
 int incremental(int maxWordLen,bool infinity, Range* ranges,int rangesLen){
     // int maxWordLen = 2;
     // bool infinity = true;
@@ -76,6 +71,20 @@ int incremental(int maxWordLen,bool infinity, Range* ranges,int rangesLen){
     return 0;
 }
 
+bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType){
+    char* test = digestFactory(dictWord,password->salt,hashType);
+    if(strcmp(test,password->hash)==0){
+        free(test);
+        password->password = calloc(sizeof(char),strlen(dictWord)+1);
+        strcpy(password->password,dictWord);
+        return true;
+    }
+    return false;
+}
+
+bool singleCrack(Password* password, HASH_TYPES hashType){
+    return dictWordCrack(password,password->username,hashType);
+}
 
 char* incrementalNextWord(char* word, Range* ranges,int rangesLen){
     int wordlen = strlen(word);

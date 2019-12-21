@@ -1,4 +1,4 @@
-#include <mpi.h>
+// #include <mpi.h>
 #include "hash/digest.h"
 #include "modes/modes.h"
 
@@ -24,8 +24,7 @@ int main(int argc, char *argv[]){
 
     // test digestFactory
         // setDebugPrints(1);
-        // free(digestFactory("ciao","ab",CRYPT_t));
-        // printf("digest sul primo come calcolato\n");
+        // free(digestFactory("lastclas","zY",MD5_t));
         
     // test incremental
         // Range ranges[] = {{48,57},{65,90},{97,122}};
@@ -35,17 +34,20 @@ int main(int argc, char *argv[]){
         // printf("incremental sul code 2 calcolato\n");
 
     // test incremental
-        Range ranges[] = {{48,57},{65,90},{97,122}};
-        char* word = calloc(sizeof(char),2);
-        if(sizeof(ranges)==0) return 0;
+        // Range ranges[] = {{48,57},{65,90},{97,122}};
+        // char* word = calloc(sizeof(char),2);
+        // if(sizeof(ranges)==0) return 0;
 
-        strcpy(word,"x");
+        // strcpy(word,"x");
     
-        while(word!=NULL){
-            word = incrementalNextWord(word,ranges,sizeof(ranges)/sizeof(ranges[0]));
-            if(word==NULL) return 0;
-            printf("%s\n",word);
-        }
+        // while(word!=NULL){
+        //     word = incrementalNextWord(word,ranges,sizeof(ranges)/sizeof(ranges[0]));
+        //     if(word==NULL) return 0;
+        //     printf("%s\n",word);
+        // }
+
+    // test singleModeciao
+        // Password pwd = {"ciao","hash","lastclas"};
 
     // }
 

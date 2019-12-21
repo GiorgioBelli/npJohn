@@ -1,6 +1,41 @@
-#include <stdbool.h>
+#ifndef STDBOOL_H
+    #include <stdbool.h>
+#endif
 
-typedef enum {
+#ifndef STDIO_H
+    #include <stdio.h>
+#endif
+
+#ifndef STDLIB_H
+    #include <stdlib.h>
+#endif
+
+#ifndef STRING_H
+    #include <string.h>
+#endif
+
+#ifndef PASSWORD_H
+    #include "../password/password.h"
+#endif
+
+#ifndef MD5_H
+    #include <openssl/md5.h>
+#endif
+
+#ifndef SHA_H
+    #include <openssl/sha.h>
+#endif
+
+#ifndef CRYPT_H
+    #include <crypt.h>
+#endif
+
+#define DIGEST_H
+
+#define _XOPEN_SOURCE
+#define CRYPT_DIGEST_LENGTH 13
+
+typedef enum HASH_TYPES{
     MD5_t,
     SHA1_t,
     SHA256_t,

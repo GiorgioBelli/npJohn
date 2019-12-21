@@ -1,14 +1,3 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-
-#define _XOPEN_SOURCE
-#define CRYPT_DIGEST_LENGTH 13
-// #include <unistd.h>
-#include <crypt.h>
 
 bool debugPrintFlag = false;
 
