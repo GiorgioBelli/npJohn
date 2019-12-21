@@ -12,7 +12,3 @@ int write_final_output(char* text, char* output_path)
 
     return 0;
 }
-
-int add(int a, int b) {
-    return a + b;
-}
