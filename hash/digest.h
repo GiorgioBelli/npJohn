@@ -42,7 +42,6 @@ typedef enum HASH_TYPES{
     CRYPT_t,
     NONETYPE_t
 } HASH_TYPES;
->>>>>>> dev
 
 char* prepSaltedKey(char* key, char* salt);
 void print(char* format,char* string); //printa solo se abilitato il flag di print

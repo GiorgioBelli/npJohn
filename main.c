@@ -1,31 +1,172 @@
-// #include <mpi.h>
-#include "hash/digest.h"
-#include "modes/modes.h"
-#include "utils/io.h"
-#include <unistd.h>
+#include "main.h"
 
-int main(int argc, char *argv[]){
+// HINTS for compiling (with required links to static libraries):
+// mpicc -o main.out main.c -pthread -lcrypt -lcrypto
 
-    char* output_file_path;
-    int opt; 
+int main(int argc, char const *argv[]) {
 
-    while((opt = getopt(argc, argv, ":o:")) != -1)  
-    {  
-        switch(opt)  
-        {  
-            case 'o':  
-                output_file_path = optarg; 
-                break;  
-            case ':':  
-                if (opt == 'o') {
-                    printf("The option -o needs an output file as an argument.\n");  
-                }
-                break;  
-            case '?':  
-                printf("Unknown option: %c\n", optopt); 
-                break;  
-        }  
-    }  
+    // TODO: allow the user the specify some options
+    //handleUserOptions();
+
+    ThreadData *data = initData();
+
+    trace("Threads have been successfully started.\n", data->worldRank);
+
+    // Run John the Ripper
+    crackThemAll(data);
+    
+    // To prevent the listener thread to become a zombie thread, join it with its master thread
+    pthread_join(data->threadId, NULL);
+
+    trace("\nYour results were stored in the file ... \n", data->worldRank);
+
+    // Terminate MPI and hence the program
+    MPI_Finalize();
+    free(data);
+    return 0;
+}
+
+void *crackThemAll(ThreadData *data) {
+
+    trace("Running JTR ... \n", data->worldRank);
+
+    // printf("Cracking passwords in range [x,y] ...\n"); 
+    
+    // This variable can be removed, is here for simulating a job that finishes in 'count' seconds
+    int count = 10;
+
+    trace("This simulation will last approximately 10 secs.", data->worldRank);
+    trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
+
+    while (count-- && data->shouldCrack) {
+
+        // Heavy work here
+        sleep(1);
+    }
+
+    // The main thread has finished the work therefore stop its listener thread
+    pthread_cancel(data->threadId);
+    return NULL;
+}
+
+// This function is run by each thread which listens for user input
+void *threadFun(void *vargp) {
+    ThreadData *data = (ThreadData *)vargp;
+    while (1) {
+        sleep(0.2);
+        char c;
+        if (data->worldRank == ROOT) {
+            // Listen for key pressed
+            c = fgetc(stdin);
+        }
+        if (handleKeyPressed(c, data)) {
+            // The user has pressed letter 'q' to exit the program
+            return NULL;
+        };
+    }
+}
+
+int handleKeyPressed(char key, ThreadData *data) {
+    // Broadcast the character read to any MPI process
+    MPI_Bcast(&key, 1, MPI_BYTE, ROOT, MPI_COMM_WORLD);
+
+    if (key == QUIT) {
+        data->shouldCrack = 0;
+        return 1;
+
+    } else if (key == STATUS) {
+        // Here we have the data to be sent from each process
+        int sendData = getDataFromProcess();
+
+        // Main process gathers information processed by the others
+        int *receiveBuffer = NULL;
+        if (data->worldRank == ROOT) {
+            receiveBuffer = malloc(sizeof(int)*4);
+        }
+        MPI_Gather(&sendData, 1, MPI_INT, receiveBuffer, 1, MPI_INT, ROOT, MPI_COMM_WORLD); 
+        if (data->worldRank == ROOT) {
+            for (int i=0; i<4; i++) {
+                printf("Received data at index %d is %d. \n", i, receiveBuffer[i]);
+            }
+            free(receiveBuffer);
+        }
+    }
+    return 0;
+}
+
+// This function is responsible for collecting the useful information to be printed for the status
+int getDataFromProcess() {
+    // TODO: implement the logic for collecting data here
+    return 42;
+}
+
+ThreadData *initData() {
+    // This structure contains info about program status to be shared among threads
+    ThreadData *data;
+    if ((data = malloc(sizeof(ThreadData))) == NULL) {
+        printf("Some error occourred when allocating memory ...\n");
+    };
+    
+    // Default behaviour specifies the program to crack the passwords
+    data->shouldCrack = 1;
+
+    // Initialize MPI
+    MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &(data->worldRank));
+
+    if (pthread_create(&(data->threadId), NULL, threadFun, data)) {
+        // Abort the execution if threads cannot be started
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    };
+
+    return data;
+}
+
+// Useful function used to print just once messages onto screen
+void trace(char *msg, int rank) {
+    if (rank == ROOT) {
+        puts(msg);
+    }
+}
+
+
+// ------------------------------------ OLD CODE TO BE REMOVED HERE ------------------------------------
+
+//int main(int argc, char const *argv[])
+//{
+//    setDebugPrints(1);
+//
+//    Password obj;
+//    obj.username = "user";
+//    obj.hash = "mmeiners:e7hvcqLV0YUmQ:53212:532:Cpr E 532 Student:/home/issl/532/mmeiners:/bin/tcsh";
+//
+//    free(digestFactory("ciao","ab", getTypeHash(obj)));
+//
+//}
+
+
+//int main(int argc, char *argv[]){
+//
+    //char* output_file_path;
+    //int opt; 
+
+    //while((opt = getopt(argc, argv, ":o:")) != -1)  
+    //{  
+        //switch(opt)  
+        //{  
+            //case 'o':  
+                //output_file_path = optarg; 
+                //break;  
+            //case ':':  
+                //if (opt == 'o') {
+                    //printf("The option -o needs an output file as an argument.\n");  
+                //}
+                //break;  
+            //case '?':  
+                //printf("Unknown option: %c\n", optopt); 
+                //break;  
+        //}  
+    //}  
 
     // // Inizializza MPI
     // MPI_Init(&argc, &argv);
@@ -79,17 +220,6 @@ int main(int argc, char *argv[]){
 
     // Termina MPI
     // MPI_Finalize();
-    return 0;
-}
+    //return 0;
+//}
 
-int main(int argc, char const *argv[])
-{
-    setDebugPrints(1);
-
-    Password obj;
-    obj.username = "user";
-    obj.hash = "mmeiners:e7hvcqLV0YUmQ:53212:532:Cpr E 532 Student:/home/issl/532/mmeiners:/bin/tcsh";
-
-    free(digestFactory("ciao","ab", getTypeHash(obj)));
-
-}
