@@ -35,6 +35,7 @@ typedef struct threadData {
 
 void trace(char *msg, int rank);                    // handy printf for MPI
 int getDataFromProcess();                           // data for checking the status of the program
+int handleUserOptions(int argc, char const *argv[]) // handles program calls' options
 int handleKeyPressed(char key, ThreadData *data);   // what the name suggests
 void *threadFun(void *vargp);                       // called by each thread
 void *crackThemAll(ThreadData *data);               // main logic of JTR

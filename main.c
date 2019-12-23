@@ -5,8 +5,7 @@
 
 int main(int argc, char const *argv[]) {
 
-    // TODO: allow the user the specify some options
-    //handleUserOptions();
+    handleUserOptions(argc, argv);
 
     ThreadData *data = initData();
 
@@ -64,6 +63,31 @@ void *threadFun(void *vargp) {
             return NULL;
         };
     }
+}
+
+int handleUserOptions(int argc, char const *argv[]) {
+    char* output_file_path;
+    int opt; 
+
+    while((opt = getopt(argc, argv, ":o:")) != -1)  
+    {  
+        switch(opt)  
+        {  
+            case 'o':  
+                output_file_path = optarg; 
+                break;  
+            case ':':  
+                if (opt == 'o') {
+                    printf("The option -o needs an output file as an argument.\n");  
+                }
+                break;  
+            case '?':  
+                printf("Unknown option: %c\n", optopt); 
+                break;  
+        }  
+    }  
+
+    return 0;
 }
 
 int handleKeyPressed(char key, ThreadData *data) {
