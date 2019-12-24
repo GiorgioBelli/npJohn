@@ -5,12 +5,8 @@
 
 int main(int argc, char const *argv[]) {
 
-<<<<<<< HEAD
-    free(digestFactory("ciao","ab", getHashType(obj)));
-=======
-    handleUserOptions(argc, argv);
->>>>>>> 9a0f9cf9f2465020456af1221e78bfa5a7bcef6d
 
+    handleUserOptions(argc, argv);
     ThreadData *data = initData();
 
     trace("Threads have been successfully started.\n", data->worldRank);
