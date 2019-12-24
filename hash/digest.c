@@ -25,7 +25,7 @@ char* prepSaltedKey(char* key, char* salt){
 
 }
 
-char* md5(char* plaintext, char* salt) {
+char* md5(char* plaintext,char* hash, char* salt) {
     unsigned char digest[MD5_DIGEST_LENGTH];
 
     char* salted = prepSaltedKey(plaintext,salt);
@@ -37,19 +37,19 @@ char* md5(char* plaintext, char* salt) {
  
     free(salted); 
 
-    char* mdString = (char*) calloc(sizeof(char),MD5_DIGEST_LENGTH*2+1);
+    // char* mdString = (char*) calloc(sizeof(char),MD5_DIGEST_LENGTH*2+1);
 
     for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
-        sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+        sprintf(&hash[i*2], "%02x", (unsigned int)digest[i]);
 
-    mdString[MD5_DIGEST_LENGTH*2] = '\0';
+    hash[MD5_DIGEST_LENGTH*2] = '\0';
 
-    print("MD5 digest: %s\n",mdString);
+    print("MD5 digest: %s\n",hash);
 
-    return mdString;
+    return hash;
 }
 
-char* sha1(char* plaintext, char* salt){
+char* sha1(char* plaintext,char* hash, char* salt){
     unsigned char digest[SHA_DIGEST_LENGTH];
     char* salted = prepSaltedKey(plaintext,salt);
     
@@ -60,19 +60,19 @@ char* sha1(char* plaintext, char* salt){
 
     free(salted); 
     
-    char* mdString = (char*) calloc(sizeof(char),SHA_DIGEST_LENGTH*2+1);
+    // char* mdString = (char*) calloc(sizeof(char),SHA_DIGEST_LENGTH*2+1);
 
     for(int i = 0; i < SHA_DIGEST_LENGTH; i++)
-        sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+        sprintf(&hash[i*2], "%02x", (unsigned int)digest[i]);
 
-    mdString[SHA_DIGEST_LENGTH*2] = '\0';
+    hash[SHA_DIGEST_LENGTH*2] = '\0';
 
-    print("SHA1 digest: %s\n",mdString);
+    print("SHA1 digest: %s\n",hash);
  
-    return mdString; //remenber to free this pointer
+    return hash; //remenber to free this pointer
 }
 
-char* sha256(char* plaintext, char* salt) {
+char* sha256(char* plaintext,char* hash, char* salt) {
     unsigned char digest[SHA256_DIGEST_LENGTH];
     char* salted = prepSaltedKey(plaintext,salt);
  
@@ -83,56 +83,60 @@ char* sha256(char* plaintext, char* salt) {
     
     free(salted); 
     
-    char* mdString = (char*) calloc(sizeof(char),SHA256_DIGEST_LENGTH*2+1);
+    // char* mdString = (char*) calloc(sizeof(char),SHA256_DIGEST_LENGTH*2+1);
 
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++){
-        sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+        sprintf(&hash[i*2], "%02x", (unsigned int)digest[i]);
 
     }
 
-    mdString[SHA256_DIGEST_LENGTH*2] = '\0';
+    hash[SHA256_DIGEST_LENGTH*2] = '\0';
 
-    print("SHA256 digest: %s\n",mdString);
+    print("SHA256 digest: %s\n",hash);
 
  
-    return mdString;
+    return hash;
 }
 
-char* unixCrypt(char* key, char* salt){
-    char* mdString = (char*) calloc(sizeof(char),CRYPT_DIGEST_LENGTH+1);
+char* unixCrypt(char* key,char* hash, char* salt){
+    // char* mdString = (char*) calloc(sizeof(char),CRYPT_DIGEST_LENGTH+1);
     
-    strncpy(mdString,crypt(key,salt),CRYPT_DIGEST_LENGTH);
+    strncpy(hash,crypt(key,salt),CRYPT_DIGEST_LENGTH);
 
-    print("crypt digest: %s\n",mdString);
+    print("crypt digest: %s\n",hash);
 
-    return mdString;
+    return hash;
 }
 
 
-char* digestFactory(char* key, char* salt, HASH_TYPES hashType){
-    if(hashType == MD5_t) return md5(key,salt);
-    if(hashType == SHA1_t) return sha1(key,salt);
-    if(hashType == SHA256_t) return sha256(key,salt);
-    if(hashType == CRYPT_t) return unixCrypt(key,salt);
+char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash){
+    if(hashType == MD5_t) return md5(key,hash,salt);
+    if(hashType == SHA1_t) return sha1(key,hash,salt);
+    if(hashType == SHA256_t) return sha256(key,hash,salt);
+    if(hashType == CRYPT_t) return unixCrypt(key,hash,salt);
     else return NULL;
 }
 
-HASH_TYPES getTypeHash(Password obj){
+int getDigestLen(HASH_TYPES hashType){
+    if(hashType == MD5_t) return MD5_DIGEST_LENGTH;
+    if(hashType == SHA1_t) return SHA_DIGEST_LENGTH;
+    if(hashType == SHA256_t) return SHA256_DIGEST_LENGTH;
+    if(hashType == CRYPT_t) return CRYPT_DIGEST_LENGTH;
+    else return 0;
+}
+
+HASH_TYPES getTypeHash(Password* pwd){
     HASH_TYPES hashType = NONETYPE_t ;
 
-    char* hash = obj.hash;
+    int len = strlen(pwd->hash);
 
-    hash = hash + (int)((char *)strchr(hash, ':') - hash) +1;
-
-    int index = (int)((char *)strchr(hash, ':') - hash);
-
-    if( index == CRYPT_DIGEST_LENGTH ){
+    if( len == CRYPT_DIGEST_LENGTH ){
         hashType = CRYPT_t;
-    }else if( index == SHA_DIGEST_LENGTH ){
+    }else if( len == SHA_DIGEST_LENGTH ){
         hashType = SHA1_t;
-    }else if( index == SHA256_DIGEST_LENGTH ){
+    }else if( len == SHA256_DIGEST_LENGTH ){
         hashType = SHA256_t;
-    }else if( index == MD5_DIGEST_LENGTH ){
+    }else if( len == MD5_DIGEST_LENGTH ){
         hashType = MD5_t;
     }
     return hashType;
