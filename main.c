@@ -6,7 +6,7 @@
 int main(int argc, char const *argv[]) {
 
 
-    handleUserOptions(argc, argv);
+    /*handleUserOptions(argc, argv);
     ThreadData *data = initData();
 
     trace("Threads have been successfully started.\n", data->worldRank);
@@ -21,7 +21,15 @@ int main(int argc, char const *argv[]) {
 
     // Terminate MPI and hence the program
     MPI_Finalize();
-    free(data);
+    free(data);*/
+
+    passwordList* head = createStruct();
+
+    while (head != NULL){
+        printf("%s -a- %s\n", head->obj.username, head->obj.hash);
+        head = head->next;
+    }
+
     return 0;
 }
 
@@ -152,7 +160,6 @@ void trace(char *msg, int rank) {
         puts(msg);
     }
 }
-
 
 // ------------------------------------ OLD CODE TO BE REMOVED HERE ------------------------------------
 
