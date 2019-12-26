@@ -184,3 +184,10 @@ char* incrementalNextWord(char* word, Range* ranges,int rangesLen){
         return word;
     }
 }
+
+char* get_nth_word(Range[] ranges){
+
+    // TODO retrieve the nth word inside the universe of words generates with that range
+
+    return NULL;
+}

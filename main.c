@@ -3,11 +3,25 @@
 // HINTS for compiling (with required links to static libraries):
 // mpicc -o main.out main.c -pthread -lcrypt -lcrypto
 
+bool incremental_flag = false;
+int incremental_block_size = 100;
+bool rule_flag = false;
+int add_n = 0;
+bool out_file_flag = false;
+char* output_file_path;
+CrackingStatus crackingStatus = {0,0,0};
+
+
 int main(int argc, char const *argv[]) {
 
     handleUserOptions(argc, argv);
 
+    printf("-r: %d\n-o %s\n",add_n,output_file_path);
+
     ThreadData *data = initData();
+
+    crackingStatus.guess=data->worldRank;
+    crackingStatus.try=data->worldRank;
 
     trace("Threads have been successfully started.\n", data->worldRank);
 
@@ -22,6 +36,9 @@ int main(int argc, char const *argv[]) {
     // Terminate MPI and hence the program
     MPI_Finalize();
     free(data);
+    if(out_file_flag){
+        free(output_file_path);
+    }
     return 0;
 }
 
@@ -39,7 +56,9 @@ void *crackThemAll(ThreadData *data) {
 
     while (count-- && data->shouldCrack) {
 
-        // Heavy work here
+        if(incremental_flag){
+
+        }
         sleep(1);
     }
 
@@ -66,19 +85,31 @@ void *threadFun(void *vargp) {
 }
 
 int handleUserOptions(int argc, char const *argv[]) {
-    char* output_file_path;
     int opt; 
 
-    while((opt = getopt(argc, argv, ":o:")) != -1)  
+    while((opt = getopt(argc, argv, ":o:r:i")) != -1)  
     {  
         switch(opt)  
         {  
             case 'o':  
-                output_file_path = optarg; 
+                out_file_flag = true;
+                output_file_path = calloc(sizeof(char),strlen(optarg)+1);
+                strcpy(output_file_path,optarg);
+                break;
+            case 'r':
+                rule_flag = true;
+                // if optarg isn't a correct string atoi returns 0
+                add_n = atoi(optarg); 
                 break;  
+            case 'i':
+                incremental_flag = true;
+                break; 
             case ':':  
                 if (opt == 'o') {
                     printf("The option -o needs an output file as an argument.\n");  
+                }
+                if (opt == 'r') {
+                    printf("The option -r needs an integer as an argument.\n");  
                 }
                 break;  
             case '?':  
@@ -100,29 +131,57 @@ int handleKeyPressed(char key, ThreadData *data) {
 
     } else if (key == STATUS) {
         // Here we have the data to be sent from each process
-        int sendData = getDataFromProcess();
+        int sendData[2] = {};
+        getDataFromProcess(&sendData);
 
         // Main process gathers information processed by the others
         int *receiveBuffer = NULL;
         if (data->worldRank == ROOT) {
-            receiveBuffer = malloc(sizeof(int)*4);
+            receiveBuffer = malloc(sizeof(int)*data->worldSize*2);
         }
-        MPI_Gather(&sendData, 1, MPI_INT, receiveBuffer, 1, MPI_INT, ROOT, MPI_COMM_WORLD); 
+        MPI_Gather(&sendData, 2, MPI_INT, receiveBuffer, 2, MPI_INT, ROOT, MPI_COMM_WORLD); 
         if (data->worldRank == ROOT) {
-            for (int i=0; i<4; i++) {
-                printf("Received data at index %d is %d. \n", i, receiveBuffer[i]);
+            int guess = 0;
+            int try = 0;
+            for (int i=0; i<data->worldSize; i+=2) {
+                    guess+=receiveBuffer[i];
+                    try+=receiveBuffer[i+1];
             }
+            printStatus(crackingStatus.starting_time,guess,try);
             free(receiveBuffer);
         }
     }
     return 0;
 }
 
-// This function is responsible for collecting the useful information to be printed for the status
-int getDataFromProcess() {
-    // TODO: implement the logic for collecting data here
-    return 42;
+void printStatus(starting_time,guess,try){
+    int elapsed_sec = time(0) - starting_time;
+
+    int days = elapsed_sec/86400;
+    int hours = (elapsed_sec-(days*86400))/3600;
+    int minutes = (elapsed_sec - (hours*3600*86400)) / 60;
+    int seconds = elapsed_sec % 60;
+
+    printf("%dg %d:%d:%d:%d %dg/s\n",
+        guess,
+        days,
+        hours,
+        minutes,
+        seconds,
+        guess/(try+1)
+
+    );
+
 }
+
+// This function is responsible for collecting the useful information to be printed for the status
+void getDataFromProcess(int* sendData) {
+    sendData[0] = crackingStatus.guess;
+    sendData[1] = crackingStatus.try;
+
+    return;
+}
+
 
 ThreadData *initData() {
     // This structure contains info about program status to be shared among threads
@@ -134,9 +193,13 @@ ThreadData *initData() {
     // Default behaviour specifies the program to crack the passwords
     data->shouldCrack = 1;
 
+    crackingStatus.starting_time = time(0);
+
     // Initialize MPI
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &(data->worldRank));
+
+    MPI_Comm_size(MPI_COMM_WORLD, &(data->worldSize));
 
     if (pthread_create(&(data->threadId), NULL, threadFun, data)) {
         // Abort the execution if threads cannot be started
