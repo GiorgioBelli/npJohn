@@ -25,80 +25,6 @@ int main(int argc, char const *argv[]) {
         }
         return 0;
     };
-    
-    // Range ranges[] = {{48,57},{65,90},{97,122}};
-    // char* res = NULL;
-    // int len;
-    // res = mapRangeIntoArray(&ranges,3,&len);
-
-    // if(data->worldRank==0){
-    //     for (int i = 0; i < len; i++)
-    //     {
-    //         printf("%d -> %c\n",i,res[i]);
-    //     }
-        
-    // }
-    
-
-    // FILE* f0 = fopen("/home/giorgio/Desktop/f0","w+");
-    // FILE* f1 = fopen("/home/giorgio/Desktop/f1","w+");
-
-    // int word1[] = {61,61,60,0};
-    // int word2[] = {61,61,60,1};
-    // int * chk1;
-    // int * chk2;
-    // for (int i = 0; i < 122; i++)
-    // {
-    //     if(data->worldRank==0) {chk1 = parallel_incrementalNextWord(&word1,4,res,len,data->worldRank,data->worldSize);}
-    //     if(data->worldRank==1) {chk2 = parallel_incrementalNextWord(&word2,4,res,len,data->worldRank,data->worldSize);}
-        
-    //     if(chk1 == NULL && data->worldRank==0){
-    //         printf("%d -> parole finite",data->worldRank);fflush(stdout);
-    //         return 0;
-    //     }
-    //     if(chk2 == NULL && data->worldRank==1){
-    //         printf("%d -> parole finite",data->worldRank);fflush(stdout);
-    //         return 0;
-    //     }
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         if(data->worldRank==0){
-    //             fprintf(f0,"%c",res[word1[j]]);
-
-    //         }
-    //         if(data->worldRank==1){
-    //             fprintf(f1,"%c",res[word2[j]]);
-
-    //         }
-
-    //     }
-    //     if(data->worldRank==0) fprintf(f0,"\n");
-    //     if(data->worldRank==1) fprintf(f1,"\n");
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         if(data->worldRank==0){
-    //             fprintf(f0,"-%d",word1[j]);
-
-    //         }
-    //         if(data->worldRank==1){
-    //             fprintf(f1,"-%d",word2[j]);
-
-    //         }
-
-    //     }
-    //     if(data->worldRank==0) fprintf(f0,"\n");
-    //     if(data->worldRank==1) fprintf(f1,"\n");
-    // }
-
-    // if(data->worldRank==0) fclose(f0);
-    // if(data->worldRank==1) fclose(f1);
-
-    
-    
-    // MPI_Finalize();
-    // free(res);
-    // free(data);
-    // return 0;
 
     crackingStatus.guess=data->worldRank;
     crackingStatus.try=data->worldRank;
@@ -129,9 +55,7 @@ void *crackThemAll(ThreadData *data) {
     // printf("Cracking passwords in range [x,y] ...\n"); 
     
     // This variable can be removed, is here for simulating a job that finishes in 'count' seconds
-    int count = 10;
 
-    trace("This simulation will last approximately 10 secs.", data->worldRank);
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
     //incremental mode 
@@ -170,9 +94,20 @@ void *crackThemAll(ThreadData *data) {
 
         }
         // sleep(1);
+        free(res);
+    }
+    else{ //fake execution
+        int count = 10;
+        trace("This simulation will last approximately 10 secs.", data->worldRank);
+
+        while (data->shouldCrack && count>0) {
+            
+            count--;
+            sleep(1);
+
+        }
     }
 
-    free(res);
 
     // The main thread has finished the work therefore stop its listener thread
     pthread_cancel(data->threadId);
@@ -211,7 +146,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
             {"add-n"  , required_argument, 0,  0 },
         };
 
-        opt = getopt_long(argc, argv, ":n:o:r:i",long_options, &option_index);
+        opt = getopt_long(argc, argv, ":o:ri",long_options, &option_index);
         
         if (opt == -1) break;
 
@@ -249,7 +184,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
             case 'r':
                 rule_flag = true;
                 // if optarg isn't a correct string atoi returns 0
-                add_n = atoi(optarg); 
+                // add_n = atoi(optarg); 
                 break;  
             case 'i':
                 incremental_flag = true;
@@ -269,13 +204,23 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
         
     }  
 
+    if(incremental_flag && rule_flag){
+        trace("Usage: -i and -r cannot be used together.\n",data->worldRank);
+        return 1;
+    }
+
     if(!incremental_flag && (incremental_min_len!=-1 || incremental_max_len!=-1)){
         trace("Usage: --max-len and --min-len can only be used with -i option.\n",data->worldRank);
         return 1;
     }
 
-    if((!rule_flag && add_n!=-1) || (rule_flag && (add_n==-1 /* || other rules*/) )){
+    if((!rule_flag && add_n!=-1)){
         trace("Usage: --add-n can only be used with -r option.\n",data->worldRank);
+        return 1;
+    }
+
+    if(rule_flag && (add_n==-1 /* || other rules*/) ){
+        trace("Usage: -r needs a rule type parameter.\n    try -r -add-n=5.\n",data->worldRank);
         return 1;
     }
 
