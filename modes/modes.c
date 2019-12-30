@@ -147,6 +147,69 @@ bool singleCrack(Password* password, HASH_TYPES hashType){
     return dictWordCrack(password,password->username,hashType,NO_RULE,NULL,0,0);
 }
 
+//returns the result array length 
+char* mapRangeIntoArray(Range* ranges,int rangesLen,int* resLen){
+
+    int arrLen = 0;
+    char* arr = NULL;
+    
+    for (int k = 0; k < rangesLen; k++){
+        arr = realloc(arr,sizeof(char)*(arrLen+ranges[k].max-ranges[k].min+1));
+        for (int i = ranges[k].min; i <= ranges[k].max; i++){
+            arr[arrLen++]=i;
+            // printf("[%d] -> %c\n",arrLen,resArr[arrLen]);
+        }
+    }
+
+    *resLen = arrLen;
+
+    return arr;
+}
+
+
+/*
+
+NOTES: word is an integer array that represents for each char of the string it's index inside the range so that
+we can increment that and then convert it to string taking range[word[i]].
+
+*/
+int* parallel_incrementalNextWord(int* word, int wordLen,char* range, int rangeLen,int offset,int world_size){
+
+    bool isLast = true;
+    if(word[wordLen-1]+world_size <= rangeLen-1) isLast = false;
+
+    for (int i = 0; i < wordLen-1; i++){
+        if(word[i] != rangeLen-1) isLast = false;
+    }
+
+    if(isLast) return NULL;
+
+    if(word[wordLen-1]+world_size > rangeLen-1 ){
+        for (int i = wordLen-1; i >= 0; i--){
+            // only for the last char we increment the char with offset
+            if(i==wordLen-1){
+                word[i] = offset;
+            }
+            else {
+                if(word[i] == rangeLen-1){
+                    word[i] = offset;
+                }
+                else{
+                    word[i]++;
+                    return word;
+                }
+            }
+        }
+    }
+    else{
+        word[wordLen-1]+=world_size;
+        return word;
+    }
+
+
+}
+
+
 char* incrementalNextWord(char* word, Range* ranges,int rangesLen){
     int wordlen = strlen(word);
 
@@ -183,11 +246,4 @@ char* incrementalNextWord(char* word, Range* ranges,int rangesLen){
         word[wordlen-1]++;
         return word;
     }
-}
-
-char* get_nth_word(Range[] ranges){
-
-    // TODO retrieve the nth word inside the universe of words generates with that range
-
-    return NULL;
 }
