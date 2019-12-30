@@ -30,6 +30,10 @@
     #include <time.h>
 #endif
 
+#ifndef GETOPT_H
+    #include <getopt.h>
+#endif
+
 #define ROOT 0
 #define QUIT 'q'
 #define STATUS '\n'
@@ -47,10 +51,10 @@ typedef struct crackingStatus{
     time_t starting_time;
 } CrackingStatus;
 
-void trace(char *msg, int rank);                    // handy printf for MPI
-void getDataFromProcess();                           // data for checking the status of the program
-int handleUserOptions(int argc, char const *argv[]);// handles program calls' options
-int handleKeyPressed(char key, ThreadData *data);   // what the name suggests
-void *threadFun(void *vargp);                       // called by each thread
-void *crackThemAll(ThreadData *data);               // main logic of JTR
-ThreadData *initData();                             // just for initialization purposes
+void trace(char *msg, int rank);                                        // handy printf for MPI
+void getDataFromProcess();                                              // data for checking the status of the program
+int handleUserOptions(int argc, char const *argv[],ThreadData *data);   // handles program calls' options
+int handleKeyPressed(char key, ThreadData *data);                       // what the name suggests
+void *threadFun(void *vargp);                                           // called by each thread
+void *crackThemAll(ThreadData *data);                                   // main logic of JTR
+ThreadData *initData();                                                 // just for initialization purposes

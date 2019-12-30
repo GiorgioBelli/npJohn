@@ -4,9 +4,10 @@
 // mpicc -o main.out main.c -pthread -lcrypt -lcrypto
 
 bool incremental_flag = false;
-int incremental_block_size = 100;
+int incremental_min_len = -1;
+int incremental_max_len = -1;
 bool rule_flag = false;
-int add_n = 0;
+int add_n = -1;
 bool out_file_flag = false;
 char* output_file_path;
 CrackingStatus crackingStatus = {0,0,0};
@@ -14,8 +15,16 @@ CrackingStatus crackingStatus = {0,0,0};
 
 int main(int argc, char const *argv[]) {
 
-
     ThreadData *data = initData();
+
+    if(handleUserOptions(argc, argv, data)){
+        MPI_Finalize();
+        free(data);
+        if(out_file_flag){
+            free(output_file_path);
+        }
+        return 0;
+    };
     
     // Range ranges[] = {{48,57},{65,90},{97,122}};
     // char* res = NULL;
@@ -111,15 +120,6 @@ int main(int argc, char const *argv[]) {
         free(output_file_path);
     }
     return 0;
-
-    /*
-    passwordList* head = createStruct();
-
-    while (head != NULL){
-        printf("%s -a- %s\n", head->obj.username, head->obj.hash);
-        head = head->next;
-    }
-    */
 }
 
 void *crackThemAll(ThreadData *data) {
@@ -134,22 +134,25 @@ void *crackThemAll(ThreadData *data) {
     trace("This simulation will last approximately 10 secs.", data->worldRank);
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
-    //TODO fix these variables, it's time to sleep for me... :)
-    Range ranges[] = {{48,57},{65,90},{97,122}};
-    char* res = NULL;
-    int len; // is initialized by mapRangeIntoArray function
-    res = mapRangeIntoArray(&ranges,3,&len); //maps ranges into one array
-    int word[] = {39,45,37,51}; // this is the initial word
-    int wordLen = sizeof(word)/sizeof(word[0]);
+    //incremental mode 
+    if(incremental_flag){
+        // TODO fix these variables, it's time to sleep for me... :)
+        Range ranges[] = {{48,57},{65,90},{97,122}};
+        int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
 
-    int * chk;  // only used for check if incremental returns null, 
-                // we shuold use word but the word's content will be lost
+        char* res = NULL;
+        int len; // is initialized by mapRangeIntoArray function
+        res = mapRangeIntoArray(&ranges,rangesLen,&len); //maps ranges into one array
+        int word[] = {39,45,37,51}; // this is the initial word
+        int wordLen = sizeof(word)/sizeof(word[0]);
 
-    word[3] += data->worldRank;
+        int * chk;  // only used for check if incremental returns null, 
+                    // we shuold use word but the word's content will be lost
 
-    while (data->shouldCrack) {
+        word[wordLen-1] += data->worldRank;
 
-        if(incremental_flag){
+        while (data->shouldCrack) {
+
 
             chk = parallel_incrementalNextWord(&word,wordLen,res,len,data->worldRank,data->worldSize);
             
@@ -169,8 +172,6 @@ void *crackThemAll(ThreadData *data) {
         // sleep(1);
     }
 
-    if(data->worldRank==0) fclose(f0);
-    if(data->worldRank==1) fclose(f1);
     free(res);
 
     // The main thread has finished the work therefore stop its listener thread
@@ -195,13 +196,51 @@ void *threadFun(void *vargp) {
     }
 }
 
-int handleUserOptions(int argc, char const *argv[]) {
+int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
     int opt; 
 
-    while((opt = getopt(argc, argv, ":o:r:i")) != -1)  
+    while(true)
+    // while((opt = getopt(argc, argv, ":o:r:i:")) != -1)  
     {  
+
+        int this_option_optind = optind ? optind : 1;
+        int option_index = 0;
+        static struct option long_options[] = {
+            {"min-len", required_argument, 0,  0 },
+            {"max-len", required_argument, 0,  0 },
+            {"add-n"  , required_argument, 0,  0 },
+        };
+
+        opt = getopt_long(argc, argv, ":n:o:r:i",long_options, &option_index);
+        
+        if (opt == -1) break;
+
+                    
         switch(opt)  
         {  
+            case 0:
+                if(strcmp(long_options[option_index].name,"max-len")==0){
+                    if(atoi(optarg) < 0){
+                        trace("--max-len must be a positive integer\n",data->worldRank);
+                        return 1;
+                    }
+                    incremental_max_len = atoi(optarg);
+                }
+                else if(strcmp(long_options[option_index].name,"min-len")==0){
+                    if(atoi(optarg) < 0){
+                        trace("--min-len must be a positive integer\n",data->worldRank);
+                        return 1;
+                    }
+                    incremental_min_len = atoi(optarg);
+                }
+                else if(strcmp(long_options[option_index].name,"add-n")==0){
+                    if(atoi(optarg) < 0){
+                        trace("--add-n must be a positive integer\n",data->worldRank);
+                        return 1;
+                    }
+                    add_n = atoi(optarg);
+                }
+                break;
             case 'o':  
                 out_file_flag = true;
                 output_file_path = calloc(sizeof(char),strlen(optarg)+1);
@@ -217,17 +256,28 @@ int handleUserOptions(int argc, char const *argv[]) {
                 break; 
             case ':':  
                 if (opt == 'o') {
-                    printf("The option -o needs an output file as an argument.\n");  
+                    trace("Usage: The option -o needs an output file as an argument.\n",data->worldRank);  
                 }
                 if (opt == 'r') {
-                    printf("The option -r needs an integer as an argument.\n");  
+                    trace("Usage: The option -r needs an integer as an argument.\n",data->worldRank);  
                 }
-                break;  
+                return 1;  
             case '?':  
-                printf("Unknown option: %c\n", optopt); 
-                break;  
+                printf("Usage: Unknown option: %c\n", optopt); 
+                return 1;
         }  
+        
     }  
+
+    if(!incremental_flag && (incremental_min_len!=-1 || incremental_max_len!=-1)){
+        trace("Usage: --max-len and --min-len can only be used with -i option.\n",data->worldRank);
+        return 1;
+    }
+
+    if((!rule_flag && add_n!=-1) || (rule_flag && (add_n==-1 /* || other rules*/) )){
+        trace("Usage: --add-n can only be used with -r option.\n",data->worldRank);
+        return 1;
+    }
 
     return 0;
 }
@@ -326,6 +376,7 @@ void trace(char *msg, int rank) {
         puts(msg);
     }
 }
+
 
 // ------------------------------------ OLD CODE TO BE REMOVED HERE ------------------------------------
 
