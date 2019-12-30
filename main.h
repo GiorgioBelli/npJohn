@@ -14,6 +14,10 @@
     #include "utils/io.h"
 #endif
 
+#ifndef HANDLER_H
+    #include "input-handler/input_handler.h"
+#endif
+
 #ifndef UNISTD_H
     #include <unistd.h>
 #endif

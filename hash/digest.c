@@ -108,7 +108,6 @@ char* unixCrypt(char* key,char* hash, char* salt){
     return hash;
 }
 
-
 char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash){
     if(hashType == MD5_t) return md5(key,hash,salt);
     if(hashType == SHA1_t) return sha1(key,hash,salt);

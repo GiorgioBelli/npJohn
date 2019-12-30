@@ -14,8 +14,6 @@ CrackingStatus crackingStatus = {0,0,0};
 
 int main(int argc, char const *argv[]) {
 
-    handleUserOptions(argc, argv);
-
 
     ThreadData *data = initData();
     
@@ -113,6 +111,15 @@ int main(int argc, char const *argv[]) {
         free(output_file_path);
     }
     return 0;
+
+    /*
+    passwordList* head = createStruct();
+
+    while (head != NULL){
+        printf("%s -a- %s\n", head->obj.username, head->obj.hash);
+        head = head->next;
+    }
+    */
 }
 
 void *crackThemAll(ThreadData *data) {
@@ -319,7 +326,6 @@ void trace(char *msg, int rank) {
         puts(msg);
     }
 }
-
 
 // ------------------------------------ OLD CODE TO BE REMOVED HERE ------------------------------------
 

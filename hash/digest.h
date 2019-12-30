@@ -1,3 +1,12 @@
+typedef enum HASH_TYPES{
+    MD5_t,
+    SHA1_t,
+    SHA256_t,
+    CRYPT_t,
+    NONETYPE_t
+} HASH_TYPES;
+
+
 #ifndef STDBOOL_H
     #include <stdbool.h>
 #endif
@@ -35,14 +44,6 @@
 #define _XOPEN_SOURCE
 #define CRYPT_DIGEST_LENGTH 13
 
-typedef enum HASH_TYPES{
-    MD5_t,
-    SHA1_t,
-    SHA256_t,
-    CRYPT_t,
-    NONETYPE_t
-} HASH_TYPES;
-
 bool setDebugPrints(bool enabled);
 void print(char* format,char* string); //printa solo se abilitato il flag di print
 char* prepSaltedKey(char* key, char* salt);
@@ -51,8 +52,8 @@ char* md5(char* plaintext,char* hash, char* salt);
 char* sha256(char* plaintext,char* hash, char* salt);
 char* sha1(char* plaintext,char* hash, char* salt);
 char* unixCrypt(char* key,char* hash, char* salt);
-
 char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash);
+
 int getDigestLen(HASH_TYPES hashType);
 HASH_TYPES getTypeHash(Password* pwd);
 
