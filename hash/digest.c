@@ -49,14 +49,14 @@ char* md5(char* plaintext,char* hash, char* salt) {
     return hash;
 }
 
-char* sha1(char* plaintext,char* hash, char* salt){
+char* sha512(char* plaintext,char* hash, char* salt){
     unsigned char digest[SHA_DIGEST_LENGTH];
     char* salted = prepSaltedKey(plaintext,salt);
     
     SHA_CTX ctx;
-    SHA1_Init(&ctx);
-    SHA1_Update(&ctx, salted, strlen(salted));
-    SHA1_Final(digest, &ctx);
+    SHA512_Init(&ctx);
+    SHA512_Update(&ctx, salted, strlen(salted));
+    SHA512_Final(digest, &ctx);
 
     free(salted); 
     
@@ -67,7 +67,7 @@ char* sha1(char* plaintext,char* hash, char* salt){
 
     hash[SHA_DIGEST_LENGTH*2] = '\0';
 
-    print("SHA1 digest: %s\n",hash);
+    print("SHA512 digest: %s\n",hash);
  
     return hash; //remenber to free this pointer
 }
@@ -109,16 +109,14 @@ char* unixCrypt(char* key,char* hash, char* salt){
 }
 
 char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash){
-    if(hashType == MD5_t) return md5(key,hash,salt);
-    if(hashType == SHA1_t) return sha1(key,hash,salt);
+    if(hashType == SHA512_t) return sha512(key,hash,salt);
     if(hashType == SHA256_t) return sha256(key,hash,salt);
     if(hashType == CRYPT_t) return unixCrypt(key,hash,salt);
     else return NULL;
 }
 
 int getDigestLen(HASH_TYPES hashType){
-    if(hashType == MD5_t) return MD5_DIGEST_LENGTH;
-    if(hashType == SHA1_t) return SHA_DIGEST_LENGTH;
+    if(hashType == SHA512_t) return SHA_DIGEST_LENGTH;
     if(hashType == SHA256_t) return SHA256_DIGEST_LENGTH;
     if(hashType == CRYPT_t) return CRYPT_DIGEST_LENGTH;
     else return 0;
@@ -126,17 +124,17 @@ int getDigestLen(HASH_TYPES hashType){
 
 HASH_TYPES getTypeHash(Password* pwd){
     HASH_TYPES hashType = NONETYPE_t ;
+    
+    int len;
 
-    int len = strlen(pwd->hash);
-
-    if( len == CRYPT_DIGEST_LENGTH ){
-        hashType = CRYPT_t;
-    }else if( len == SHA_DIGEST_LENGTH ){
-        hashType = SHA1_t;
-    }else if( len == SHA256_DIGEST_LENGTH ){
+    if( pwd->hashType != NULL ){ len = atoi(pwd->hashType); }
+    else if( pwd->hashType == NULL && pwd->hash != NULL ){ return CRYPT_t; }
+    else{ return NOPASSWORD_t; }
+    
+    if( len == 5 ){
         hashType = SHA256_t;
-    }else if( len == MD5_DIGEST_LENGTH ){
-        hashType = MD5_t;
+    }else if( len == 6 ){
+        hashType = SHA512_t;
     }
     return hashType;
 }

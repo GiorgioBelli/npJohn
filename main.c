@@ -45,6 +45,7 @@ int main(int argc, char const *argv[]) {
     if(out_file_flag){
         free(output_file_path);
     }
+    
     return 0;
 }
 

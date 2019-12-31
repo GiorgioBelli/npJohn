@@ -4,9 +4,9 @@ passwordList* createStruct(){
     char str[MAXCHAR];
     int startHash;
     int offsetHash;
-    int offsetID;
-    int offsetSalt;
-    int offsetpsw;
+    int offsetID = 0;
+    int offsetSalt = 0;
+    int offsetpsw = 0;
     int count = 1;
 
     fp = fopen(fileName, "r");
@@ -31,30 +31,41 @@ passwordList* createStruct(){
         if(offsetHash == 0){
             obj->salt = NULL;
 
-            obj->hash = (char *)malloc(sizeof(char)*12);
-            strncpy(obj->hash, "NO PASSWORD", 11);
+            obj->hash = NULL;
             
         }else{
 
-            offsetID = (int)((char *)strchr(&str[startHash+2], '$') - &str[startHash+2]);
             
-            offsetSalt = (int)((char *)strchr(&str[startHash+offsetID+3], '$') - &str[startHash+offsetID+3]);
+            if ((char *)strchr(&str[startHash+2], '$') == NULL){
+                offsetpsw = (int)((char *)strchr(&str[startHash+2], ':') - &str[startHash+2]);
 
-            offsetpsw = (int)((char *)strchr(&str[startHash+offsetID+offsetSalt+4], ':') - &str[startHash+offsetID+offsetSalt+4]);
+                obj->hashType = NULL;
 
-            //printf("%d-%s\n%d-%s\n%d-%s\n%d-%s", offsetHash, str+startHash+1, offsetID, str+startHash+2, offsetSalt, str+startHash+offsetID+3, offsetpsw, str+startHash+offsetID+offsetSalt+4);
-        
-            obj->hashType = (char *)malloc(sizeof(char)*offsetID+1);
-            strncpy(obj->hashType, &str[startHash+2], offsetID);
-            obj->hashType[offsetID+1] = "\0";
+                obj->hash = (char *)malloc(sizeof(char)*offsetpsw+1);
+                strncpy(obj->hash, &str[startHash+2], offsetpsw);
+                obj->hash[offsetpsw+1] = "\0";
 
-            obj->salt = (char *)malloc(sizeof(char)*offsetSalt+1);
-            strncpy(obj->salt, &str[startHash+offsetID+3], offsetSalt);
-            obj->salt[offsetSalt+1] = "\0";
+                obj->salt = (char *)malloc(sizeof(char)*3);
+                strncpy(obj->salt, &str[startHash+2], 2);
+                obj->salt[3] = "\0";
+                
+            }else{
+                offsetID = (int)((char *)strchr(&str[startHash+2], '$') - &str[startHash+2]);
+                offsetSalt = (int)((char *)strchr(&str[startHash+offsetID+3], '$') - &str[startHash+offsetID+3]);
+                offsetpsw = (int)((char *)strchr(&str[startHash+offsetID+offsetSalt+4], ':') - &str[startHash+offsetID+offsetSalt+4]);
+            
+                obj->hashType = (char *)malloc(sizeof(char)*offsetID+1);
+                strncpy(obj->hashType, &str[startHash+2], offsetID);
+                obj->hashType[offsetID+1] = "\0";
 
-            obj->hash = (char *)malloc(sizeof(char)*offsetpsw+1);
-            strncpy(obj->hash, &str[startHash+offsetID+offsetSalt+4], offsetpsw);
-            obj->hash[offsetpsw+1] = "\0";
+                obj->salt = (char *)malloc(sizeof(char)*offsetSalt+1);
+                strncpy(obj->salt, &str[startHash+offsetID+3], offsetSalt);
+                obj->salt[offsetSalt+1] = "\0";
+
+                obj->hash = (char *)malloc(sizeof(char)*offsetpsw+1);
+                strncpy(obj->hash, &str[startHash+offsetID+offsetSalt+4], offsetpsw);
+                obj->hash[offsetpsw+1] = "\0";
+            }
         }
 
         passwordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));

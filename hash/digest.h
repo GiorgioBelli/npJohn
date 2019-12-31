@@ -1,8 +1,8 @@
 typedef enum HASH_TYPES{
-    MD5_t,
-    SHA1_t,
     SHA256_t,
+    SHA512_t,
     CRYPT_t,
+    NOPASSWORD_t,
     NONETYPE_t
 } HASH_TYPES;
 
@@ -50,7 +50,7 @@ char* prepSaltedKey(char* key, char* salt);
 
 char* md5(char* plaintext,char* hash, char* salt);
 char* sha256(char* plaintext,char* hash, char* salt);
-char* sha1(char* plaintext,char* hash, char* salt);
+char* sha512(char* plaintext,char* hash, char* salt);
 char* unixCrypt(char* key,char* hash, char* salt);
 char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash);
 
