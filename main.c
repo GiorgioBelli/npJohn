@@ -10,6 +10,7 @@ bool rule_flag = false;
 int add_n = -1;
 bool out_file_flag = false;
 char* output_file_path;
+char* input_file_path;
 CrackingStatus crackingStatus = {0,0,0};
 
 
@@ -45,7 +46,7 @@ int main(int argc, char const *argv[]) {
     if(out_file_flag){
         free(output_file_path);
     }
-    
+
     return 0;
 }
 
@@ -203,6 +204,13 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                 return 1;
         }  
         
+    }
+
+    for(; optind < argc; optind++){      
+        //argv[optind];
+        input_file_path = (char *)calloc(sizeof(char), strlen(argv[optind])+1);
+        strncpy(input_file_path, argv[optind], strlen(argv[optind]));
+        input_file_path[strlen(argv[optind])+1] = "\0";
     }  
 
     if(incremental_flag && rule_flag){

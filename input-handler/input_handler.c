@@ -1,5 +1,4 @@
-passwordList* createStruct(){
-    
+passwordList* createStruct(char* fileName){
     FILE *fp;
     char str[MAXCHAR];
     int startHash;

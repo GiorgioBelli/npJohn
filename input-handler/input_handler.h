@@ -11,7 +11,6 @@
 #endif
 
 #define HANDLE_H
-#define fileName "input-handler/passwd.txt"
 #define MAXCHAR 1000
 
 typedef struct passwordList{  
@@ -20,6 +19,6 @@ typedef struct passwordList{
 }passwordList;
 
 void addElement(passwordList** head, Password* obj);
-passwordList* createStruct();
+passwordList* createStruct(char* fileName);
 
 #include "input_handler.c"
