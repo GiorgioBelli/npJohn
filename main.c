@@ -1,5 +1,8 @@
 #include "main.h"
 
+#define PSW_FOUND 0
+#define KEY_PRESSED 1
+
 // HINTS for compiling (with required links to static libraries):
 // mpicc -o main.out main.c -pthread -lcrypt -lcrypto
 
@@ -35,8 +38,11 @@ int main(int argc, char const *argv[]) {
     // Run John the Ripper
     crackThemAll(data);
     
-    // To prevent the listener thread to become a zombie thread, join it with its master thread
+    // To prevent others threads to become zombie threads, join them with their master thread.
     pthread_join(data->threadId, NULL);
+    if (data->worldRank==ROOT) {
+        pthread_join(data->thread2Id, NULL);
+    }
 
     trace("\nYour results were stored in the file ... \n", data->worldRank);
 
@@ -76,7 +82,7 @@ void *crackThemAll(ThreadData *data) {
         int wordLen = sizeof(word)/sizeof(word[0]);
 
         int * chk;  // only used for check if incremental returns null, 
-                    // we shuold use word but the word's content will be lost
+                    // we should use word but the word's content will be lost
 
         word[wordLen-1] += data->worldRank;
         passwordList* head = createStruct(input_file_path);
@@ -98,7 +104,9 @@ void *crackThemAll(ThreadData *data) {
                 digest = realloc(digest,(sizeof(char)*2*getDigestLen(hashType)+1));
                 digestFactory(word,head->obj.salt,hashType,digest);
 
-                if(strcmp(digest,head->obj.hash)==0) passwordFound(&(head->obj),word,data);
+                if(strcmp(digest,head->obj.hash)==0) {
+                    passwordFound(&(head->obj),word,data);
+                }
 
                 head = head->next;
             }
@@ -134,8 +142,20 @@ void *crackThemAll(ThreadData *data) {
 void passwordFound(Password* password,char* word,ThreadData* data){
     password->password = calloc(sizeof(char),strlen(word)+1);
     strcpy(password->password,word);
-
+    notifyPasswordFound(data, password->password);  // notify other cores
     printMatch(password);
+}
+
+// This is a very inefficient way to bcast to all other nodes the found psw but I had no clue how.
+// to manage to send mpi messages using different threads. This uses a miniprotocol for communicating:
+// first the type of the msg is sent as well as the data that can be then safely parsed.
+void notifyPasswordFound(ThreadData *data, char *clear_psw) {
+    for (int i=0; i<data->worldSize; i++) {
+        if (i!=data->worldRank) {
+            MPI_Send(PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+            MPI_Send(clear_psw, strlen(clear_psw), MPI_BYTE, i, 0, MPI_COMM_WORLD);
+        }
+    }
 }
 
 void printMatch(Password* password){
@@ -148,18 +168,44 @@ void printMatch(Password* password){
 void *threadFun(void *vargp) {
     ThreadData *data = (ThreadData *)vargp;
     while (1) {
-        sleep(0.2);
+        //sleep(0.2);   This is probably no more needed, each call inside if/else is a blocking call.
         char c;
-        if (data->worldRank == ROOT) {
-            // Listen for key pressed
+        int msgType;
+        if (data->worldRank == ROOT && pthread_self() == data->firstThread) {
+            // The first thread (2) of core n.0 must listen for key pressed
             c = fgetc(stdin);
+            for (int i=0; i<data->worldSize; i++) {
+                MPI_Send(KEY_PRESSED, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+            }
+            msgType = KEY_PRESSED;  // only this thread already knows the real value of msgType
+        } else {
+            // All the other threads must listen for an incoming msg
+            MPI_Recv(&msgType, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-        if (handleKeyPressed(c, data)) {
-            // The user has pressed letter 'q' to exit the program
-            return NULL;
-        };
-    }
+        if (msgType == KEY_PRESSED) {
+            if (handleKeyPressed(c, data)) {
+                // The user has pressed letter 'q' to exit the program
+                return NULL;
+            }
+        } else if (msgType == KEY_PRESSED) {
+                MPI_Status status;
+                int password_len;
+                MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
+                MPI_Get_count(&status, MPI_INT, &password_len);     // get the msg size
+                char *password = malloc(sizeof(char)*(password_len+1));
+                MPI_Recv(&msgType, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                password[password_len] = '\0';
+                markAsFound(password);
+                free(password);
+                break;
+        }
+    }   
 }
+
+void markAsFound(char *password) {
+    // Mark the current given password as found
+}
+
 
 int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
     int opt; 
@@ -351,7 +397,18 @@ ThreadData *initData() {
     if (pthread_create(&(data->threadId), NULL, threadFun, data)) {
         // Abort the execution if threads cannot be started
         MPI_Abort(MPI_COMM_WORLD, 1);
+    } else {
+        // If the thread has been correctly created, mark it as the first thread created
+        // because we want to distinguish the 2 threads running threadFun() wihtin core num. 0
+        data->firstThread = data->threadId;
+    }
+    ;
+    if (data->worldRank == ROOT && pthread_create(&(data->thread2Id), NULL, threadFun, data)) {
+        // Same, but also for the second (3) thread of the main process.
+        MPI_Abort(MPI_COMM_WORLD, 1);
     };
+
+
 
     return data;
 }

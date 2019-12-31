@@ -42,7 +42,9 @@ typedef struct threadData {
     int worldRank;
     int shouldCrack;
     int worldSize;
+    pthread_t firstThread;
     pthread_t threadId;
+    pthread_t thread2Id;
 } ThreadData;
 
 typedef struct crackingStatus{
