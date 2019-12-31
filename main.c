@@ -206,8 +206,12 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
         
     }
 
+    if (optind == argc){
+        printf("Usage: Missing parameter for input_file\n"); 
+        return 1;
+    }
+    
     for(; optind < argc; optind++){      
-        //argv[optind];
         input_file_path = (char *)calloc(sizeof(char), strlen(argv[optind])+1);
         strncpy(input_file_path, argv[optind], strlen(argv[optind]));
         input_file_path[strlen(argv[optind])+1] = "\0";
