@@ -11,7 +11,7 @@ int add_n = -1;
 bool out_file_flag = false;
 char* output_file_path;
 char* input_file_path;
-CrackingStatus crackingStatus = {0,0,0};
+CrackingStatus crackingStatus = {0,0,0,NULL};
 
 
 int main(int argc, char const *argv[]) {
@@ -60,6 +60,9 @@ void *crackThemAll(ThreadData *data) {
 
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
+    passwordList* head = createStruct(input_file_path);
+
+
     //incremental mode 
     if(incremental_flag){
         // TODO fix these variables, it's time to sleep for me... :)
@@ -76,44 +79,69 @@ void *crackThemAll(ThreadData *data) {
                     // we shuold use word but the word's content will be lost
 
         word[wordLen-1] += data->worldRank;
+        passwordList* head = createStruct(input_file_path);
 
         while (data->shouldCrack) {
-
 
             chk = parallel_incrementalNextWord(&word,wordLen,res,len,data->worldRank,data->worldSize);
             
             if(chk == NULL){
-                printf("[%d] -> parole finite",data->worldRank);fflush(stdout);
+                printf("[%d] -> parole finite",data->worldRank);fflush(stdout);                
                 break;
             }
 
-            /*
-            
-            TODO generate hash for word and check if it's equal to a password in list 
-            
-            */
 
+            char* digest;
+            HASH_TYPES hashType = NONETYPE_t;
+            while(head != NULL){
+                hashType = getTypeHash(&(head->obj));
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(hashType)+1));
+                digestFactory(word,head->obj.salt,hashType,digest);
+
+                if(strcmp(digest,head->obj.hash)==0) passwordFound(&(head->obj),word,data);
+
+                head = head->next;
+            }
 
         }
         // sleep(1);
         free(res);
     }
     else{ //fake execution
-        int count = 10;
-        trace("This simulation will last approximately 10 secs.", data->worldRank);
 
-        while (data->shouldCrack && count>0) {
-            
-            count--;
-            sleep(1);
-
+         while(head != NULL){
+            printf("Username: %s\nHash: %s\nPassword: %s\nSalt: %s\nHashType: %s\nType: %d\n\n", head->obj.username, head->obj.hash, head->obj.password, head->obj.salt, head->obj.hashType, getTypeHash(&head->obj));
+            head = head->next;
         }
+        // int count = 10;
+        // trace("This simulation will last approximately 10 secs.", data->worldRank);
+
+        // while (data->shouldCrack && count>0) {
+            
+        //     count--;
+        //     printf("\007");
+        //     sleep(1);
+
+        // }
     }
 
 
     // The main thread has finished the work therefore stop its listener thread
     pthread_cancel(data->threadId);
     return NULL;
+}
+
+void passwordFound(Password* password,char* word,ThreadData* data){
+    password->password = calloc(sizeof(char),strlen(word)+1);
+    strcpy(password->password,word);
+
+    printMatch(password);
+}
+
+void printMatch(Password* password){
+    /*
+        TODO: implement password natch 
+    */
 }
 
 // This function is run by each thread which listens for user input

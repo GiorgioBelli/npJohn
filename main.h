@@ -49,6 +49,7 @@ typedef struct crackingStatus{
     int guess;
     int try;
     time_t starting_time;
+    char* currentWord;
 } CrackingStatus;
 
 void trace(char *msg, int rank);                                        // handy printf for MPI
