@@ -16,9 +16,9 @@
 typedef struct passwordList{  
     Password  obj; 
     struct passwordList *next; 
-}passwordList;
+}PasswordList;
 
-void addElement(passwordList** head, Password* obj);
-passwordList* createStruct(char* fileName);
+void addElement(PasswordList** head, Password* obj);
+PasswordList* createStruct(char* fileName);
 
 #include "input_handler.c"

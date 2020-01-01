@@ -71,7 +71,7 @@ int incremental(int maxWordLen,bool infinity, Range* ranges,int rangesLen){
     return 0;
 }
 
-bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES ruleType, Range ranges[],int rangesLen,int incrementalLen){
+bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES ruleType, Range ranges[],int rangesLen,int incrementalLen,CrackingStatus* crackingStatus){
 
     //checking for necessary not null parameters
     if(password==NULL || dictWord==NULL || hashType==NONETYPE_t) return false;
@@ -89,6 +89,9 @@ bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES
 
     //generation of the dictWord and testing with password hash
     digestFactory(dictWord,password->salt,hashType,test);
+
+    crackingStatus->try++;
+
     if(strcmp(test,password->hash)==0){
         free(test);
         password->password = calloc(sizeof(char),dictWordLen+1);
@@ -121,6 +124,8 @@ bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES
         strcat(concatWord,incrementalWord);
 
         digestFactory(concatWord,password->salt,hashType, test);
+
+        crackingStatus->try++;
         
         // printf("\n%s\n%s\n%s\n",concatWord,test,password->hash);
         // fflush(stdout);

@@ -1,4 +1,4 @@
-passwordList* createStruct(char* fileName){
+PasswordList* createStruct(char* fileName){
     FILE *fp;
     char str[MAXCHAR];
     int startHash;
@@ -14,7 +14,7 @@ passwordList* createStruct(char* fileName){
         return NULL;
     }
 
-    passwordList* head = NULL;
+    PasswordList* head = NULL;
 
     while (fgets(str, MAXCHAR, fp) != NULL){
         startHash = (int)((char *)strchr(str, ':') - str);
@@ -67,7 +67,7 @@ passwordList* createStruct(char* fileName){
             }
         }
 
-        passwordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));
+        PasswordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));
         node->obj = *obj;
         node->next = NULL;
         
@@ -75,7 +75,7 @@ passwordList* createStruct(char* fileName){
         if( head == NULL ){
             head = node;
         }else{
-            passwordList* current = head;
+            PasswordList* current = head;
             while( current->next ){
                 current = current->next;
             }

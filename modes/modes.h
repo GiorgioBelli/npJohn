@@ -42,7 +42,7 @@ typedef enum RULES{
 
 int incremental(int maxWordLen,bool infinity, Range* ranges, int rangesLen);
 char* incrementalNextWord(char* word, Range* ranges,int rangesLen);
-bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES ruleType, Range ranges[],int rangesLen,int incrementalLen);
+bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES ruleType, Range ranges[],int rangesLen,int incrementalLen,CrackingStatus* crackingStatus);
 bool singleCrack(Password* password, HASH_TYPES hashType);
 char* mapRangeIntoArray(Range* ranges,int rangesLen,int* resLen);
 

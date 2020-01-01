@@ -1,21 +1,6 @@
+
 #ifndef MPI_H
     #include <mpi.h>
-#endif
-
-#ifndef HASH_DIGEST_H
-    #include "hash/digest.h"
-#endif
-
-#ifndef MODES_H
-    #include "modes/modes.h"
-#endif
-
-#ifndef UTILS_H
-    #include "utils/io.h"
-#endif
-
-#ifndef HANDLER_H
-    #include "input-handler/input_handler.h"
 #endif
 
 #ifndef UNISTD_H
@@ -34,10 +19,6 @@
     #include <getopt.h>
 #endif
 
-#define ROOT 0
-#define QUIT 'q'
-#define STATUS '\n'
-
 typedef struct threadData {
     int worldRank;
     int shouldCrack;
@@ -51,6 +32,26 @@ typedef struct crackingStatus{
     time_t starting_time;
     char* currentWord;
 } CrackingStatus;
+#ifndef HASH_DIGEST_H
+    #include "hash/digest.h"
+#endif
+
+#ifndef MODES_H
+    #include "modes/modes.h"
+#endif
+
+#ifndef UTILS_H
+    #include "utils/io.h"
+#endif
+
+#ifndef HANDLER_H
+    #include "input-handler/input_handler.h"
+#endif
+#define ROOT 0
+#define QUIT 'q'
+#define STATUS '\n'
+
+
 
 void trace(char *msg, int rank);                                        // handy printf for MPI
 void getDataFromProcess();                                              // data for checking the status of the program
