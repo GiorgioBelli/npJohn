@@ -337,7 +337,11 @@ int handleKeyPressed(char key, ThreadData *data) {
         int *receiveBuffer = NULL;
         pthread_t currentThread = pthread_self();
         if (data->worldRank == ROOT && currentThread == data->firstThread) {
-            receiveBuffer = malloc(sizeof(int)*data->worldSize*2);
+            
+            if ((receiveBuffer = malloc(sizeof(int)*data->worldSize*2)) == NULL) {
+                printf("Some error occourred when allocating memory ...\n");
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
         }
         MPI_Gather(&sendData, 2, MPI_INT, receiveBuffer, 2, MPI_INT, ROOT, MPI_COMM_WORLD); 
         if (data->worldRank == ROOT && currentThread == data->firstThread) {
@@ -388,6 +392,7 @@ ThreadData *initData() {
     ThreadData *data;
     if ((data = malloc(sizeof(ThreadData))) == NULL) {
         printf("Some error occourred when allocating memory ...\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
     };
     
     // Default behaviour specifies the program to crack the passwords
