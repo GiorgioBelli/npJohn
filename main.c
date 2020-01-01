@@ -1,11 +1,12 @@
 #include "main.h"
 
-#define PSW_FOUND 0
-#define KEY_PRESSED 1
+// Please keep these as global variables, we need them as variables in order to send them!
+const int PSW_FOUND = 0;
+const int KEY_PRESSED = 1;
+
 
 // HINTS for compiling (with required links to static libraries):
 // mpicc -o main.out main.c -pthread -lcrypt -lcrypto
-
 bool incremental_flag = false;
 int incremental_min_len = -1;
 int incremental_max_len = -1;
@@ -44,6 +45,7 @@ int main(int argc, char const *argv[]) {
         pthread_join(data->thread2Id, NULL);
     }
 
+    // TODO: Before printing the msg below check if there is data to be saved into a file.
     trace("\nYour results were stored in the file ... \n", data->worldRank);
 
     // Terminate MPI and hence the program
@@ -67,7 +69,6 @@ void *crackThemAll(ThreadData *data) {
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
     passwordList* head = createStruct(input_file_path);
-
 
     //incremental mode 
     if(incremental_flag){
@@ -133,10 +134,16 @@ void *crackThemAll(ThreadData *data) {
         // }
     }
 
-
-    // The main thread has finished the work therefore stop its listener thread
-    pthread_cancel(data->threadId);
+    // Once here, the work is ended and the other threads are no longer necessary.
+    killThemAll(data);
     return NULL;
+}
+
+void killThemAll(ThreadData *data) {
+    pthread_cancel(data->threadId);
+    if (data->thread2Id != NULL) {
+        pthread_cancel(data->thread2Id);
+    }
 }
 
 void passwordFound(Password* password,char* word,ThreadData* data){
@@ -152,8 +159,8 @@ void passwordFound(Password* password,char* word,ThreadData* data){
 void notifyPasswordFound(ThreadData *data, char *clear_psw) {
     for (int i=0; i<data->worldSize; i++) {
         if (i!=data->worldRank) {
-            MPI_Send(PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-            MPI_Send(clear_psw, strlen(clear_psw), MPI_BYTE, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&clear_psw, strlen(clear_psw), MPI_BYTE, i, 0, MPI_COMM_WORLD);
         }
     }
 }
@@ -175,7 +182,7 @@ void *threadFun(void *vargp) {
             // The first thread (2) of core n.0 must listen for key pressed
             c = fgetc(stdin);
             for (int i=0; i<data->worldSize; i++) {
-                MPI_Send(KEY_PRESSED, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+                MPI_Send(&KEY_PRESSED, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             }
             msgType = KEY_PRESSED;  // only this thread already knows the real value of msgType
         } else {
@@ -184,20 +191,20 @@ void *threadFun(void *vargp) {
         }
         if (msgType == KEY_PRESSED) {
             if (handleKeyPressed(c, data)) {
+                trace("\nQuitting the program ...", data->worldRank);
                 // The user has pressed letter 'q' to exit the program
                 return NULL;
             }
-        } else if (msgType == KEY_PRESSED) {
-                MPI_Status status;
-                int password_len;
-                MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
-                MPI_Get_count(&status, MPI_INT, &password_len);     // get the msg size
-                char *password = malloc(sizeof(char)*(password_len+1));
-                MPI_Recv(&msgType, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                password[password_len] = '\0';
-                markAsFound(password);
-                free(password);
-                break;
+        } else if (msgType == PSW_FOUND) {
+            MPI_Status status;
+            int password_len;
+            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
+            MPI_Get_count(&status, MPI_INT, &password_len);     // get the msg size
+            char *password = malloc(sizeof(char)*(password_len+1));
+            MPI_Recv(&msgType, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            password[password_len] = '\0';
+            markAsFound(password);
+            free(password);
         }
     }   
 }
@@ -317,7 +324,6 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
 int handleKeyPressed(char key, ThreadData *data) {
     // Broadcast the character read to any MPI process
     MPI_Bcast(&key, 1, MPI_BYTE, ROOT, MPI_COMM_WORLD);
-
     if (key == QUIT) {
         data->shouldCrack = 0;
         return 1;
@@ -329,11 +335,12 @@ int handleKeyPressed(char key, ThreadData *data) {
 
         // Main process gathers information processed by the others
         int *receiveBuffer = NULL;
-        if (data->worldRank == ROOT) {
+        pthread_t currentThread = pthread_self();
+        if (data->worldRank == ROOT && currentThread == data->firstThread) {
             receiveBuffer = malloc(sizeof(int)*data->worldSize*2);
         }
         MPI_Gather(&sendData, 2, MPI_INT, receiveBuffer, 2, MPI_INT, ROOT, MPI_COMM_WORLD); 
-        if (data->worldRank == ROOT) {
+        if (data->worldRank == ROOT && currentThread == data->firstThread) {
             int guess = 0;
             int try = 0;
             for (int i=0; i<data->worldSize; i+=2) {
@@ -397,19 +404,15 @@ ThreadData *initData() {
     if (pthread_create(&(data->threadId), NULL, threadFun, data)) {
         // Abort the execution if threads cannot be started
         MPI_Abort(MPI_COMM_WORLD, 1);
-    } else {
-        // If the thread has been correctly created, mark it as the first thread created
-        // because we want to distinguish the 2 threads running threadFun() wihtin core num. 0
-        data->firstThread = data->threadId;
     }
-    ;
+    // If the thread has been correctly created, mark it as the first thread created
+    // because we want to distinguish the 2 threads running threadFun() wihtin core num. 0
+    data->firstThread = data->threadId;
+
     if (data->worldRank == ROOT && pthread_create(&(data->thread2Id), NULL, threadFun, data)) {
         // Same, but also for the second (3) thread of the main process.
         MPI_Abort(MPI_COMM_WORLD, 1);
     };
-
-
-
     return data;
 }
 
