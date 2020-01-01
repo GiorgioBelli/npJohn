@@ -323,8 +323,11 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
 
 // Disclaimer: this function assumes WORLD_SIZE > 1
 int handleKeyPressed(char key, ThreadData *data) {
-    // Broadcast the character read to any MPI process
-    MPI_Bcast(&key, 1, MPI_BYTE, ROOT, MPI_COMM_WORLD);
+    // Broadcast the character read ONCE to each MPI process
+    if (pthread_self() == data->firstThread) {
+        MPI_Bcast(&key, 1, MPI_BYTE, ROOT, MPI_COMM_WORLD);
+    }
+
     if (key == QUIT) {
         data->shouldCrack = 0;
         return 1;
@@ -341,7 +344,6 @@ int handleKeyPressed(char key, ThreadData *data) {
         // Main process gathers information processed by the others
         int *receiveBuffer = NULL;
         if (data->worldRank == CHOSEN_CORE) {
-            
             if ((receiveBuffer = malloc(sizeof(int)*data->worldSize*2)) == NULL) {
                 printf("Some error occourred when allocating memory ...\n");
                 MPI_Abort(MPI_COMM_WORLD, 1);
