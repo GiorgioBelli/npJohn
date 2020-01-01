@@ -119,7 +119,7 @@ void *crackThemAll(ThreadData *data) {
     else{ //fake execution
 
          while(head != NULL){
-            printf("Username: %s\nHash: %s\nPassword: %s\nSalt: %s\nHashType: %s\nType: %d\n\n", head->obj.username, head->obj.hash, head->obj.password, head->obj.salt, head->obj.hashType, getTypeHash(&head->obj));
+            //printf("Username: %s\nHash: %s\nPassword: %s\nSalt: %s\nHashType: %s\nType: %d\n\n", head->obj.username, head->obj.hash, head->obj.password, head->obj.salt, head->obj.hashType, getTypeHash(&head->obj));
             head = head->next;
         }
         // int count = 10;
@@ -321,6 +321,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
     return 0;
 }
 
+// Disclaimer: this function assumes WORLD_SIZE > 1
 int handleKeyPressed(char key, ThreadData *data) {
     // Broadcast the character read to any MPI process
     MPI_Bcast(&key, 1, MPI_BYTE, ROOT, MPI_COMM_WORLD);
@@ -329,22 +330,25 @@ int handleKeyPressed(char key, ThreadData *data) {
         return 1;
 
     } else if (key == STATUS) {
+        // The core responsible for holding data is not the ROOT since it is running 3 threads in total
+        // and could remain stucked when calling MPI_Gather (because would call it twice).
+        const int CHOSEN_CORE = ROOT+1;    
+
         // Here we have the data to be sent from each process
         int sendData[2] = {};
         getDataFromProcess(&sendData);
 
         // Main process gathers information processed by the others
         int *receiveBuffer = NULL;
-        pthread_t currentThread = pthread_self();
-        if (data->worldRank == ROOT && currentThread == data->firstThread) {
+        if (data->worldRank == CHOSEN_CORE) {
             
             if ((receiveBuffer = malloc(sizeof(int)*data->worldSize*2)) == NULL) {
                 printf("Some error occourred when allocating memory ...\n");
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }
         }
-        MPI_Gather(&sendData, 2, MPI_INT, receiveBuffer, 2, MPI_INT, ROOT, MPI_COMM_WORLD); 
-        if (data->worldRank == ROOT && currentThread == data->firstThread) {
+        MPI_Gather(&sendData, 2, MPI_INT, receiveBuffer, 2, MPI_INT, CHOSEN_CORE, MPI_COMM_WORLD); 
+        if (data->worldRank == CHOSEN_CORE) {
             int guess = 0;
             int try = 0;
             for (int i=0; i<data->worldSize; i+=2) {
