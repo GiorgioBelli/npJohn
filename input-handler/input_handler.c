@@ -86,3 +86,39 @@ PasswordList* createStruct(char* fileName){
 
     return head;
 }
+
+DictList* importFileDict(char* fileName){
+    FILE *fp;
+    char str[MAXCHAR];
+
+    fp = fopen(fileName, "r");
+    if (fp == NULL){
+        printf("Could not open file %s",fileName);
+        return NULL;
+    }
+
+    DictList* head = NULL;
+
+    while (fgets(str, MAXCHAR, fp) != NULL){
+
+
+        DictList* node = (struct dictList *)malloc(sizeof(struct dictList));
+
+        node->word = (char *)malloc(sizeof(char)*strlen(str));
+        strncpy(node->word, str, strlen(str)-1);
+        node->word[strlen(str)] = '\0';
+        node->next = NULL;
+        
+        if( head == NULL ){
+            head = node;
+        }else{
+            DictList* current = head;
+            while( current->next ){
+                current = current->next;
+            }
+            current->next = node;
+        }
+    }
+
+    return head;
+}

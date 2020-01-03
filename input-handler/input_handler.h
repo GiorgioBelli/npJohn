@@ -18,7 +18,13 @@ typedef struct passwordList{
     struct passwordList *next; 
 }PasswordList;
 
+typedef struct dictList{
+    char* word;
+    struct dictList* next;
+}DictList;
+
 void addElement(PasswordList** head, Password* obj);
 PasswordList* createStruct(char* fileName);
+DictList* importFileDict(char* fileName);
 
 #include "input_handler.c"
