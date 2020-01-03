@@ -10,6 +10,14 @@
     #include <string.h>
 #endif
 
+#ifndef PASSWORD_H
+    #include "../password/password.h"
+#endif
+
+#ifndef DIGEST_H
+    #include "../hash/digest.h"
+#endif
+
 #define HANDLE_H
 #define MAXCHAR 1000
 
