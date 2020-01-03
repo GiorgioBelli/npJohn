@@ -122,19 +122,14 @@ int getDigestLen(HASH_TYPES hashType){
     else return 0;
 }
 
-HASH_TYPES getTypeHash(Password* pwd){
+HASH_TYPES getTypeHash(int id){
     HASH_TYPES hashType = NONETYPE_t ;
     
-    int len;
-
-    if( pwd->hashType != NULL ){ len = atoi(pwd->hashType); }
-    else if( pwd->hashType == NULL && pwd->hash != NULL ){ return CRYPT_t; }
-    else{ return NOPASSWORD_t; }
-    
-    if( len == 5 ){
+    if( id == 5 ){
         hashType = SHA256_t;
-    }else if( len == 6 ){
+    }else if( id == 6 ){
         hashType = SHA512_t;
     }
+
     return hashType;
 }

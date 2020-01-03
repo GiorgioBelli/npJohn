@@ -6,7 +6,6 @@ typedef enum HASH_TYPES{
     NONETYPE_t
 } HASH_TYPES;
 
-
 #ifndef STDBOOL_H
     #include <stdbool.h>
 #endif
@@ -55,6 +54,6 @@ char* unixCrypt(char* key,char* hash, char* salt);
 char* digestFactory(char* key, char* salt, HASH_TYPES hashType, char* hash);
 
 int getDigestLen(HASH_TYPES hashType);
-HASH_TYPES getTypeHash(Password* pwd);
+HASH_TYPES getTypeHash(int id);
 
 #include "digest.c"

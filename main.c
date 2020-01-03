@@ -93,9 +93,9 @@ void *crackThemAll(ThreadData *data) {
             char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
             while(passwordList != NULL){
-                hashType = getTypeHash(&(passwordList->obj));
-                digest = realloc(digest,(sizeof(char)*2*getDigestLen(hashType)+1));
-                digestFactory(word,passwordList->obj.salt,hashType,digest);
+                //hashType = getTypeHash(&(passwordList->obj));
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordList->obj.hashType)+1));
+                digestFactory(word,passwordList->obj.salt, passwordList->obj.hashType, digest);
 
                 printf("hash -> %s\n",passwordList->obj.hash);
                 // if(strcmp(digest,passwordList->obj.hash)==0) {
@@ -110,14 +110,14 @@ void *crackThemAll(ThreadData *data) {
         free(res);
     }
     else if(rule_flag){ //dictionary mode (eventually) with rules
-        PasswordList* dictList = NULL; //TODO modify dictList type with DictList*
+        DictList* dictList = NULL; //TODO modify dictList type with DictList*
 
         while(dictList != NULL){
             char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
 
             while(passwordList != NULL){
-                hashType = getTypeHash(&(passwordList->obj));
+                //hashType = getTypeHash(&(passwordList->obj));
                 RULES rule = NO_RULE;
                 if(add_n!=-1) rule = ADD_N_NUMBERS;
                 
@@ -126,7 +126,7 @@ void *crackThemAll(ThreadData *data) {
                 // if(dictWordCrack(
                 //     passwordList->obj,
                 //     dictList->obj,
-                //     hashType,
+                //     passwordList->obj.hashType,
                 //     rule,
                 //     ranges,
                 //     rangesLen,
