@@ -148,8 +148,8 @@ bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES
     return false;
 }
 
-bool singleCrack(Password* password, HASH_TYPES hashType){
-    return dictWordCrack(password,password->username,hashType,NO_RULE,NULL,0,0);
+bool singleCrack(Password* password, HASH_TYPES hashType, CrackingStatus* crackingStatus){
+    return dictWordCrack(password,password->username,hashType,NO_RULE,NULL,0,0,crackingStatus);
 }
 
 //returns the result array length 

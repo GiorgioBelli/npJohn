@@ -9,6 +9,7 @@ int incremental_max_len = -1;
 bool rule_flag = false;
 int add_n = -1;
 bool out_file_flag = false;
+char* dict
 char* output_file_path;
 char* input_file_path;
 CrackingStatus crackingStatus = {0,0,0,NULL};
@@ -120,18 +121,20 @@ void *crackThemAll(ThreadData *data) {
                 RULES rule = NO_RULE;
                 if(add_n!=-1) rule = ADD_N_NUMBERS;
                 
-                if(dictWordCrack(
-                    passwordList->obj,
-                    dictList->obj,
-                    hashType,
-                    rule,
-                    ranges,
-                    rangesLen,
-                    add_n,
-                    &crackingStatus
-                )){
-                    /* passwordFound(...) */
-                }
+                //the block below needs the dict list implemented
+
+                // if(dictWordCrack(
+                //     passwordList->obj,
+                //     dictList->obj,
+                //     hashType,
+                //     rule,
+                //     ranges,
+                //     rangesLen,
+                //     add_n,
+                //     &crackingStatus
+                // )){
+                //     /* passwordFound(...) */
+                // }
 
                 passwordList = passwordList->next;
             }
