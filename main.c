@@ -9,7 +9,7 @@ int incremental_max_len = -1;
 bool rule_flag = false;
 int add_n = -1;
 bool out_file_flag = false;
-char* dict
+char* dict;
 char* output_file_path;
 char* input_file_path;
 CrackingStatus crackingStatus = {0,0,0,NULL};
