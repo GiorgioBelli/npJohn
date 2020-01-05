@@ -34,5 +34,7 @@ typedef struct dictList{
 void addElement(PasswordList** head, Password* obj);
 PasswordList* createStruct(char* fileName);
 DictList* importFileDict(char* fileName);
+void freePass(PasswordList* head);
+void freeDict(DictList* head);
 
 #include "input_handler.c"

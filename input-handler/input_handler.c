@@ -176,3 +176,32 @@ DictList* importFileDict(char* fileName){
 
     return head;
 }
+
+void freePass(PasswordList* head){
+    PasswordList* current = head;
+    while(head){
+        
+        free(head->obj.hash);
+        free(head->obj.username);
+        free(head->obj.password);
+        free(head->obj.salt);
+        
+        current = head;
+        head = head->next;
+
+        free(current);
+    }
+}
+
+void freeDict(DictList* head){
+    DictList* current = head;
+    while(head){
+        
+        free(head->word);
+
+        current = head;
+        head = head->next;
+
+        free(current);
+    }
+}

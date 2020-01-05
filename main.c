@@ -17,7 +17,7 @@ CrackingStatus crackingStatus = {0,0,0,NULL};
 
 int main(int argc, char const *argv[]) {
 
-    ThreadData *data = initData();
+    /*ThreadData *data = initData();
 
     if(handleUserOptions(argc, argv, data)){
         MPI_Finalize();
@@ -46,7 +46,13 @@ int main(int argc, char const *argv[]) {
     free(data);
     if(out_file_flag){
         free(output_file_path);
-    }
+    }*/
+
+    PasswordList* head = createStruct("input-handler/passwd.txt");
+    freePass(head);
+
+    DictList* dict = importFileDict("input-handler/passwd.txt");
+    freeDict(dict);
 
     return 0;
 }
@@ -272,7 +278,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
     for(; optind < argc; optind++){      
         input_file_path = (char *)calloc(sizeof(char), strlen(argv[optind])+1);
         strncpy(input_file_path, argv[optind], strlen(argv[optind]));
-        input_file_path[strlen(argv[optind])+1] = "\0";
+        input_file_path[strlen(argv[optind])+1] = '\0';
     }  
 
     if(incremental_flag && rule_flag){
