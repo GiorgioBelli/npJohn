@@ -7,6 +7,11 @@ const int KEY_PRESSED = 1;
 
 // HINTS for compiling (with required links to static libraries):
 // mpicc -o main.out main.c -pthread -lcrypt -lcrypto
+
+// HINTS for running on lan:
+// mpirun -np N ./main.out input-handler/passwd.txt
+// mpirun -np 12 -hosts <master_ip>,<slave_1_ip>,...,<slave_m_ip> ./main.out input-handler/passwd.txt
+
 bool incremental_flag = false;
 int incremental_min_len = -1;
 int incremental_max_len = -1;
