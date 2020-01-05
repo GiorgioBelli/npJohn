@@ -75,7 +75,8 @@ void *crackThemAll(ThreadData *data) {
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
     PasswordList* passwordList = createStruct(input_file_path);
-    Range ranges[] = {{48,57},{65,90},{97,122}};
+    // Range ranges[] = {{48,57},{65,90},{97,122}};
+    Range ranges[] = {{97,122}};
     int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
 
     //incremental mode 
@@ -84,8 +85,10 @@ void *crackThemAll(ThreadData *data) {
         char* res = NULL;
         int len; // is initialized by mapRangeIntoArray function
         res = mapRangeIntoArray(&ranges,rangesLen,&len); //maps ranges into one array
-        int word[] = {39,45,37,51}; // this is the initial word
+        int word[] = {0,0,0,0}; // this is the initial word
         int wordLen = sizeof(word)/sizeof(word[0]);
+        char* alphaWord = NULL;
+        alphaWord = wordFromRange(word,alphaWord,res,wordLen);
 
         int * chk;  // only used for check if incremental returns null, 
                     // we should use word but the word's content will be lost
@@ -95,7 +98,9 @@ void *crackThemAll(ThreadData *data) {
         while (data->shouldCrack) {
 
             chk = parallel_incrementalNextWord(&word,wordLen,res,len,data->worldRank,data->worldSize);
-            
+
+            alphaWord = wordFromRange(word,alphaWord,res,wordLen);
+
             if(chk == NULL){
                 // printf("[%d] -> parole finite",data->worldRank);fflush(stdout);
                 break;
@@ -104,20 +109,26 @@ void *crackThemAll(ThreadData *data) {
 
             char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
+
+            int counter = 0;
+
             while(passwordList != NULL){
-                //hashType = getTypeHash(&(passwordList->obj));
+                counter++;
+                hashType = getTypeHash(&(passwordList->obj));
                 digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordList->obj.hashType)+1));
                 digestFactory(word,passwordList->obj.salt, passwordList->obj.hashType, digest);
 
-                printf("hash -> %s\n",passwordList->obj.hash);
-                // if(strcmp(digest,passwordList->obj.hash)==0) {
-                if(strcmp(digest,"password hash")==0) {
-                    /*passwordFound(&(passwordList->obj),word,data)*/
+                if(strcmp(digest,passwordList->obj.hash)==0) {
+                    // printf("found password with index: %d\n",counter);
+                    passwordFound(&(passwordList->obj),counter,alphaWord,data);
                 }
                 passwordList = passwordList->next;
             }
+            // printf("[%d] %s\n",data->worldRank,alphaWord);fflush(stdout);
+
         }
         // sleep(1);
+        free(alphaWord);
         free(res);
     }
     else if(rule_flag){ //dictionary mode (eventually) with rules
@@ -167,7 +178,19 @@ void *crackThemAll(ThreadData *data) {
 
     // Once here, the work is ended and the other threads are no longer necessary.
     killThemAll(data);
+
     return NULL;
+}
+
+// reverse the mapping on the ranges into a string
+char* wordFromRange(int word[], char* resultString, char map[], int wordlen){
+    resultString = (char*)realloc(resultString,sizeof(char)*(wordlen+1));
+    for (int i = 0; i < wordlen; i++){
+        resultString[i] = map[word[i]];
+    }
+    resultString[wordlen] = '\0';
+
+    return resultString;
 }
 
 void killThemAll(ThreadData *data) {
@@ -177,29 +200,28 @@ void killThemAll(ThreadData *data) {
     }
 }
 
-void passwordFound(Password* password,char* word,ThreadData* data){
+void passwordFound(Password* password, int index,char* word,ThreadData* data){
     password->password = calloc(sizeof(char),strlen(word)+1);
     strcpy(password->password,word);
-    notifyPasswordFound(data, password->password);  // notify other cores
+    notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
+
 }
 
 // This is a very inefficient way to bcast to all other nodes the found psw but I had no clue how.
 // to manage to send mpi messages using different threads. This uses a miniprotocol for communicating:
 // first the type of the msg is sent as well as the data that can be then safely parsed.
-void notifyPasswordFound(ThreadData *data, char *clear_psw) {
+void notifyPasswordFound(ThreadData *data, int passwordIndex) {
     for (int i=0; i<data->worldSize; i++) {
         if (i!=data->worldRank) {
             MPI_Send(&PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-            MPI_Send(&clear_psw, strlen(clear_psw), MPI_BYTE, i, 0, MPI_COMM_WORLD);
+            MPI_Send(&passwordIndex, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
     }
 }
 
 void printMatch(Password* password){
-    /*
-        TODO: implement password natch 
-    */
+    printf("%s: %s\n",password->username,password->password);
 }
 
 // This function is run by each thread which listens for user input
@@ -228,20 +250,18 @@ void *threadFun(void *vargp) {
             }
         } else if (msgType == PSW_FOUND) {
             MPI_Status status;
-            int password_len;
             MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
-            MPI_Get_count(&status, MPI_INT, &password_len);     // get the msg size
-            char *password = malloc(sizeof(char)*(password_len+1));
-            MPI_Recv(&msgType, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            password[password_len] = '\0';
-            markAsFound(password);
-            free(password);
+            int passwordIndex = -1;
+            MPI_Recv(&passwordIndex, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            markAsFound(passwordIndex,data);
         }
     }   
 }
 
-void markAsFound(char *password) {
-    // Mark the current given password as found
+void markAsFound(int passwordIndex,ThreadData* data) {
+
+    //TODO this function should move the password found from passwordList to foundPasswordList
+    printf("[%d] receive notification for password n. %d\n",data->worldRank,passwordIndex);
 }
 
 

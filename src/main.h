@@ -62,4 +62,6 @@ int handleKeyPressed(char key, ThreadData *data);                       // what 
 void *threadFun(void *vargp);                                           // called by each thread
 void killThemAll();                                                     // cancel threads running in backgorund
 void *crackThemAll(ThreadData *data);                                   // main logic of JTR
+char* wordFromRange(int word[], char* resultString, char map[], int wordlen);
+
 ThreadData *initData();                                                 // just for initialization purposes
