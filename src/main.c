@@ -21,6 +21,8 @@ bool out_file_flag = false;
 char* dict;
 char* output_file_path;
 char* input_file_path;
+Range* ranges = NULL;
+int rangesLen = 0;
 CrackingStatus crackingStatus = {0,0,0,NULL};
 
 
@@ -57,6 +59,7 @@ int main(int argc, char const *argv[]) {
     // Terminate MPI and hence the program
     MPI_Finalize();
     free(data);
+    free(ranges);
     if(out_file_flag){
         free(output_file_path);
     }
@@ -76,60 +79,89 @@ void *crackThemAll(ThreadData *data) {
 
     PasswordList* passwordList = createStruct(input_file_path);
     // Range ranges[] = {{48,57},{65,90},{97,122}};
-    Range ranges[] = {{97,122}};
-    int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
+    // Range ranges[] = {{97,122}};
+    // int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
 
     //incremental mode 
     if(incremental_flag){
 
         char* res = NULL;
-        int len; // is initialized by mapRangeIntoArray function
-        res = mapRangeIntoArray(&ranges,rangesLen,&len); //maps ranges into one array
-        int word[] = {0,0,0,0}; // this is the initial word
-        int wordLen = sizeof(word)/sizeof(word[0]);
+        int resLen; // is initialized by mapRangeIntoArray function
+        res = mapRangeIntoArray(ranges,rangesLen,&resLen); //maps ranges into a linear array
+
+        if(incremental_min_len==-1) incremental_min_len=1;
+        if(incremental_max_len==-1) incremental_min_len=8; //if not provided = 8
+
         char* alphaWord = NULL;
-        alphaWord = wordFromRange(word,alphaWord,res,wordLen);
 
-        int * chk;  // only used for check if incremental returns null, 
-                    // we should use word but the word's content will be lost
+        for(int l=incremental_min_len; l<=incremental_max_len;l++){
+            int* word = calloc(sizeof(int),l); // this is the initial word of charset, initialized at 0 with calloc
 
-        word[wordLen-1] += data->worldRank;
+            alphaWord = wordFromRange(word,alphaWord,res,l);
 
-        while (data->shouldCrack) {
 
-            chk = parallel_incrementalNextWord(&word,wordLen,res,len,data->worldRank,data->worldSize);
+            int * chk;  // only used for check if incremental returns null, 
+                        // we should use word but the word's content will be lost
 
-            alphaWord = wordFromRange(word,alphaWord,res,wordLen);
+            word[l-1] += data->worldRank;
 
-            if(chk == NULL){
-                // printf("[%d] -> parole finite",data->worldRank);fflush(stdout);
-                break;
-            }
-
+            int counter = 0;
 
             char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
 
-            int counter = 0;
-
-            while(passwordList != NULL){
+            PasswordList* passwordListPointer = passwordList;
+            while(passwordListPointer != NULL){
                 counter++;
-                hashType = getTypeHash(&(passwordList->obj));
-                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordList->obj.hashType)+1));
-                digestFactory(word,passwordList->obj.salt, passwordList->obj.hashType, digest);
+                hashType = getTypeHash(&(passwordListPointer->obj));
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
+                digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
 
-                if(strcmp(digest,passwordList->obj.hash)==0) {
+                if(strcmp(digest,passwordListPointer->obj.hash)==0) {
                     // printf("found password with index: %d\n",counter);
-                    passwordFound(&(passwordList->obj),counter,alphaWord,data);
+                    passwordFound(&(passwordListPointer->obj),counter,alphaWord,data);
                 }
-                passwordList = passwordList->next;
+                passwordListPointer = passwordListPointer->next;
             }
-            // printf("[%d] %s\n",data->worldRank,alphaWord);fflush(stdout);
 
+            while (data->shouldCrack) {
+
+                chk = parallel_incrementalNextWord(word,l,res,resLen,data->worldRank,data->worldSize);
+
+                alphaWord = wordFromRange(word,alphaWord,res,l);
+                crackingStatus.try++;
+                crackingStatus.currentWord = alphaWord;
+
+                if(chk == NULL){
+                    // printf("[%d] -> parole finite",data->worldRank);fflush(stdout);
+                    break;
+                }
+
+                passwordListPointer = passwordList;
+                while(passwordListPointer != NULL){
+                    counter++;
+                    hashType = getTypeHash(&(passwordListPointer->obj));
+                    digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
+                    digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
+
+                    if(strcmp(digest,passwordListPointer->obj.hash)==0) {
+                        // printf("found password with index: %d\n",counter);
+                        passwordFound(&(passwordListPointer->obj),counter,alphaWord,data);
+                    }
+                    passwordListPointer = passwordListPointer->next;
+                }
+                // if(data->worldRank==0) printf("[%d] %s\n",data->worldRank,alphaWord);fflush(stdout);
+                
+                
+
+            }
+            free(word);
+            free(digest);
         }
         // sleep(1);
         free(alphaWord);
         free(res);
+
     }
     else if(rule_flag){ //dictionary mode (eventually) with rules
         DictList* dictList = NULL; //TODO modify dictList type with DictList*
@@ -193,6 +225,7 @@ char* wordFromRange(int word[], char* resultString, char map[], int wordlen){
     return resultString;
 }
 
+
 void killThemAll(ThreadData *data) {
     pthread_cancel(data->threadId);
     if (data->thread2Id != NULL) {
@@ -222,6 +255,7 @@ void notifyPasswordFound(ThreadData *data, int passwordIndex) {
 
 void printMatch(Password* password){
     printf("%s: %s\n",password->username,password->password);
+    fflush(stdout);
 }
 
 // This function is run by each thread which listens for user input
@@ -249,11 +283,12 @@ void *threadFun(void *vargp) {
                 return NULL;
             }
         } else if (msgType == PSW_FOUND) {
-            MPI_Status status;
-            MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
+            // MPI_Status status;
+            // MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
             int passwordIndex = -1;
             MPI_Recv(&passwordIndex, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             markAsFound(passwordIndex,data);
+            //TODO there is an error with received passwordIndex
         }
     }   
 }
@@ -261,7 +296,7 @@ void *threadFun(void *vargp) {
 void markAsFound(int passwordIndex,ThreadData* data) {
 
     //TODO this function should move the password found from passwordList to foundPasswordList
-    printf("[%d] receive notification for password n. %d\n",data->worldRank,passwordIndex);
+    printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
 }
 
 
@@ -278,7 +313,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
             {"min-len", required_argument, 0,  0 },
             {"max-len", required_argument, 0,  0 },
             {"add-n"  , required_argument, 0,  0 },
-            {"ranges"  , required_argument, 0,  0 },
+            {"charset"  , required_argument, 0,  0 },
         };
 
         opt = getopt_long(argc, argv, ":o:ri",long_options, &option_index);
@@ -310,9 +345,24 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                     }
                     add_n = atoi(optarg);
                 }
-                else if(strcmp(long_options[option_index].name,"ranges")==0){
-                    int lenRanges;
-                    int* ranges = decodeRanges(optarg, &lenRanges);
+                else if(strcmp(long_options[option_index].name,"charset")==0){
+                    int rlen;
+                    int* r = decodeRanges(optarg, &rlen);
+                    rangesLen = (int)rlen/2; //number of couples
+                    if(r==NULL) {
+                        trace("Usage: --charset bad format:\n    try with: --charset=48-57,65-90,97-122.\n",data->worldRank); 
+                        return 1;
+                    }
+                    ranges = calloc(sizeof(Range),rangesLen);
+                    for (int i = 0; i < rlen; i+=2){
+                        ranges[i/2].min = r[i];
+                        ranges[i/2].max = r[i+1];
+                    }
+                    
+                    free(r);
+                }else{
+                    trace("Usage: Unknow option\n",data->worldRank); 
+                    return 1;
                 }
                 break;
             case 'o':  
@@ -320,7 +370,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                 output_file_path = calloc(sizeof(char),strlen(optarg)+1);
                 strcpy(output_file_path,optarg);
                 break;
-            case 'r':
+            case 'w':
                 rule_flag = true;
                 // if optarg isn't a correct string atoi returns 0
                 // add_n = atoi(optarg); 
@@ -428,13 +478,15 @@ void printStatus(starting_time,guess,try){
     int minutes = (elapsed_sec - (hours*3600*86400)) / 60;
     int seconds = elapsed_sec % 60;
 
-    printf("%dg %d:%d:%d:%d %dg/s\n",
+    printf("%dg %d:%d:%d:%d %dg/s %ldt/s %s\n",
         guess,
         days,
         hours,
         minutes,
         seconds,
-        guess/(try+1)
+        guess/(try+1),
+        (long)try/elapsed_sec,
+        crackingStatus.currentWord
 
     );
 

@@ -70,14 +70,14 @@ int* decodeRanges(char* string, int* lenArray) {
             int end = atoi(ints[1]);
             free(ints[1]);
             //printf("%d\n", end);
-            if(start != lastEnd + 1) {
-                printf("Bad format\n");
-                return NULL;
-            }
-            if (i == numRanges - 1 && end != 127) {
-               printf("Bad format\n");
-                return NULL; 
-            }
+            // if(start != lastEnd + 1) {
+            //     // printf("Bad format\n");
+            //     return NULL;
+            // }
+            // if (i == numRanges - 1 && end != 127) {
+            // //    printf("Bad format\n");
+            //     return NULL; 
+            // }
             lastEnd = end;
             len += 2;
             ranges = realloc(ranges, sizeof(int)*len);
@@ -88,7 +88,7 @@ int* decodeRanges(char* string, int* lenArray) {
         }
         free(tokens);
     } else {
-    printf("Bad format\n");
+    // printf("Bad format\n");
     return NULL; 
     }
 
