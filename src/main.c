@@ -278,6 +278,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
             {"min-len", required_argument, 0,  0 },
             {"max-len", required_argument, 0,  0 },
             {"add-n"  , required_argument, 0,  0 },
+            {"ranges"  , required_argument, 0,  0 },
         };
 
         opt = getopt_long(argc, argv, ":o:ri",long_options, &option_index);
@@ -308,6 +309,10 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                         return 1;
                     }
                     add_n = atoi(optarg);
+                }
+                else if(strcmp(long_options[option_index].name,"ranges")==0){
+                    int lenRanges;
+                    int* ranges = decodeRanges(optarg, &lenRanges);
                 }
                 break;
             case 'o':  

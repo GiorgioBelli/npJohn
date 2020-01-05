@@ -42,8 +42,12 @@ typedef struct crackingStatus{
     #include "modes/modes.h"
 #endif
 
-#ifndef UTILS_H
+#ifndef UTILS_IO_H
     #include "utils/io.h"
+#endif
+
+#ifndef UTILS_UTILS_H
+    #include "utils/utils.h"
 #endif
 
 #ifndef HANDLER_H
