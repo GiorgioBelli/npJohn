@@ -1,2 +1,5 @@
 # VSC settings directory
 .vscode/
+
+# Commons
+build
