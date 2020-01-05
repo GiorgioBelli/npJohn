@@ -17,7 +17,7 @@ CrackingStatus crackingStatus = {0,0,0,NULL};
 
 int main(int argc, char const *argv[]) {
 
-    /*ThreadData *data = initData();
+    ThreadData *data = initData();
 
     if(handleUserOptions(argc, argv, data)){
         MPI_Finalize();
@@ -46,13 +46,7 @@ int main(int argc, char const *argv[]) {
     free(data);
     if(out_file_flag){
         free(output_file_path);
-    }*/
-
-    PasswordList* head = createStruct("input-handler/passwd.txt");
-    freePass(head);
-
-    DictList* dict = importFileDict("input-handler/passwd.txt");
-    freeDict(dict);
+    }
 
     return 0;
 }
