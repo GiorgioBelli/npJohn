@@ -13,6 +13,7 @@ int incremental_max_len = -1;
 bool rule_flag = false;
 int add_n = -1;
 bool out_file_flag = false;
+char* dict;
 char* output_file_path;
 char* input_file_path;
 CrackingStatus crackingStatus = {0,0,0,NULL};
@@ -68,13 +69,12 @@ void *crackThemAll(ThreadData *data) {
 
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
-    passwordList* head = createStruct(input_file_path);
+    PasswordList* passwordList = createStruct(input_file_path);
+    Range ranges[] = {{48,57},{65,90},{97,122}};
+    int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
 
     //incremental mode 
     if(incremental_flag){
-        // TODO fix these variables, it's time to sleep for me... :)
-        Range ranges[] = {{48,57},{65,90},{97,122}};
-        int rangesLen = sizeof(ranges)/sizeof(ranges[0]);
 
         char* res = NULL;
         int len; // is initialized by mapRangeIntoArray function
@@ -86,52 +86,78 @@ void *crackThemAll(ThreadData *data) {
                     // we should use word but the word's content will be lost
 
         word[wordLen-1] += data->worldRank;
-        passwordList* head = createStruct(input_file_path);
 
         while (data->shouldCrack) {
 
             chk = parallel_incrementalNextWord(&word,wordLen,res,len,data->worldRank,data->worldSize);
             
             if(chk == NULL){
-                printf("[%d] -> parole finite",data->worldRank);fflush(stdout);                
+                // printf("[%d] -> parole finite",data->worldRank);fflush(stdout);
                 break;
             }
 
 
-            char* digest;
+            char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
-            while(head != NULL){
-                hashType = getTypeHash(&(head->obj));
-                digest = realloc(digest,(sizeof(char)*2*getDigestLen(hashType)+1));
-                digestFactory(word,head->obj.salt,hashType,digest);
+            while(passwordList != NULL){
+                //hashType = getTypeHash(&(passwordList->obj));
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordList->obj.hashType)+1));
+                digestFactory(word,passwordList->obj.salt, passwordList->obj.hashType, digest);
 
-                if(strcmp(digest,head->obj.hash)==0) {
-                    passwordFound(&(head->obj),word,data);
+                printf("hash -> %s\n",passwordList->obj.hash);
+                // if(strcmp(digest,passwordList->obj.hash)==0) {
+                if(strcmp(digest,"password hash")==0) {
+                    /*passwordFound(&(passwordList->obj),word,data)*/
                 }
-
-                head = head->next;
+                passwordList = passwordList->next;
             }
-
         }
         // sleep(1);
         free(res);
     }
+    else if(rule_flag){ //dictionary mode (eventually) with rules
+        DictList* dictList = NULL; //TODO modify dictList type with DictList*
+
+        while(dictList != NULL){
+            char* digest = NULL;
+            HASH_TYPES hashType = NONETYPE_t;
+
+            while(passwordList != NULL){
+                //hashType = getTypeHash(&(passwordList->obj));
+                RULES rule = NO_RULE;
+                if(add_n!=-1) rule = ADD_N_NUMBERS;
+                
+                //the block below needs the dict list implemented
+
+                // if(dictWordCrack(
+                //     passwordList->obj,
+                //     dictList->obj,
+                //     passwordList->obj.hashType,
+                //     rule,
+                //     ranges,
+                //     rangesLen,
+                //     add_n,
+                //     &crackingStatus
+                // )){
+                //     /* passwordFound(...) */
+                // }
+
+                passwordList = passwordList->next;
+            }
+
+        }
+    }
     else{ //fake execution
 
-         while(head != NULL){
-            //printf("Username: %s\nHash: %s\nPassword: %s\nSalt: %s\nHashType: %s\nType: %d\n\n", head->obj.username, head->obj.hash, head->obj.password, head->obj.salt, head->obj.hashType, getTypeHash(&head->obj));
-            head = head->next;
-        }
-        // int count = 10;
-        // trace("This simulation will last approximately 10 secs.", data->worldRank);
+        int count = 10;
+        trace("This simulation will last approximately 10 secs.", data->worldRank);
 
-        // while (data->shouldCrack && count>0) {
+        while (data->shouldCrack && count>0) {
             
-        //     count--;
-        //     printf("\007");
-        //     sleep(1);
+            count--;
+            sleep(1);
 
-        // }
+        }
     }
 
     // Once here, the work is ended and the other threads are no longer necessary.

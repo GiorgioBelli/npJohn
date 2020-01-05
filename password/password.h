@@ -5,5 +5,5 @@ typedef struct Password{
     char* hash;
     char* password;
     char* salt;
-    char* hashType;
+    HASH_TYPES hashType;
 } Password;

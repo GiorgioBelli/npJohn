@@ -10,15 +10,29 @@
     #include <string.h>
 #endif
 
+#ifndef PASSWORD_H
+    #include "../password/password.h"
+#endif
+
+#ifndef DIGEST_H
+    #include "../hash/digest.h"
+#endif
+
 #define HANDLE_H
 #define MAXCHAR 1000
 
 typedef struct passwordList{  
     Password  obj; 
     struct passwordList *next; 
-}passwordList;
+}PasswordList;
 
-void addElement(passwordList** head, Password* obj);
-passwordList* createStruct(char* fileName);
+typedef struct dictList{
+    char* word;
+    struct dictList* next;
+}DictList;
+
+void addElement(PasswordList** head, Password* obj);
+PasswordList* createStruct(char* fileName);
+DictList* importFileDict(char* fileName);
 
 #include "input_handler.c"

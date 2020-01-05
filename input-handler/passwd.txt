@@ -5,5 +5,5 @@ krishna::53204:532:Cpr E 532 Student:/home/issl/532/krishna:/bin/tcsh
 jwcarter:$1$salt$HpUlZlNIV6TH2:53205:532:Cpr E 532 Student:/home/issl/532/jwcarter:/bin/tcsh
 vpetrov::53206:532:Cpr E 532 Student:/home/issl/532/vpetrov:/bin/tcsh
 prasad:skc9rL5TEkaBQ:53207:532:Cpr E 532 Student:/home/issl/532/prasad:/bin/tcsh
-bowang:$1$salt$AdAvT/LLjeQL6:53208:532:Cpr E 532 Student:/home/issl/532/bowang:/bin/tcsh
-lchill:$1$salt$wKZMDUqnhfcYA:53209:532:Cpr E 532 Student:/home/issl/532/lchill:/bin/tcsh
+bowang:$12$salt$AdAvT/LLjeQL6:53208:532:Cpr E 532 Student:/home/issl/532/bowang:/bin/tcsh
+lchill:$1$sadlt$wKZMDUqnhfcYA:53209:532:Cpr E 532 Student:/home/issl/532/lchill:/bin/tcsh
