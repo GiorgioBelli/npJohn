@@ -1,5 +1,5 @@
 CC = mpicc
-VPATH = SRC INCLUDE 
+VPATH = src INCLUDE
 
 all: program
 
