@@ -22,7 +22,7 @@
 #define MAXCHAR 1000
 
 typedef struct passwordList{  
-    Password  obj; 
+    Password obj; 
     struct passwordList *next; 
 }PasswordList;
 

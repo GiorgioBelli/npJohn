@@ -17,6 +17,7 @@ int incremental_min_len = -1;
 int incremental_max_len = -1;
 bool rule_flag = false;
 int add_n = -1;
+bool single_flag = false;
 bool out_file_flag = false;
 char* dict;
 char* output_file_path;
@@ -166,38 +167,64 @@ void *crackThemAll(ThreadData *data) {
 
     }
     else if(rule_flag){ //dictionary mode (eventually) with rules
-        DictList* dictList = NULL; //TODO modify dictList type with DictList*
+        DictList* dictList = importFileDict(dict);
+
+        PasswordList* copyList;
+
+        for (int g = 0; g < data->worldRank; g++) dictList = dictList->next;
+
+
 
         while(dictList != NULL){
             char* digest = NULL;
             HASH_TYPES hashType = NONETYPE_t;
 
-            while(passwordList != NULL){
-                //hashType = getTypeHash(&(passwordList->obj));
+            int counter = 0;
+            copyList = passwordList;
+
+            while(copyList != NULL){
+                //hashType = getTypeHash(&(copyList->obj));
                 RULES rule = NO_RULE;
                 if(add_n!=-1) rule = ADD_N_NUMBERS;
+
+                counter ++;
                 
-                //the block below needs the dict list implemented
+                if(dictWordCrack(
+                    &copyList->obj,
+                    dictList->word,
+                    copyList->obj.hashType,
+                    rule,
+                    ranges,
+                    rangesLen,
+                    add_n,
+                    &crackingStatus
+                )){
+                    passwordFound(&(copyList->obj),counter,dictList->word,data);
+                    copyList = NULL;
+                }
 
-                // if(dictWordCrack(
-                //     passwordList->obj,
-                //     dictList->obj,
-                //     passwordList->obj.hashType,
-                //     rule,
-                //     ranges,
-                //     rangesLen,
-                //     add_n,
-                //     &crackingStatus
-                // )){
-                //     /* passwordFound(...) */
-                // }
-
-                passwordList = passwordList->next;
+                copyList = copyList->next;
             }
+
+            for (int g = 0; g < data->worldSize && dictList!=NULL; g++) dictList = dictList->next;
+
 
         }
     }
-    else{ //fake execution
+    else if(single_flag){
+
+        int counter = 0;
+
+        while(passwordList != NULL){
+            counter++;
+            if(singleCrack(&(passwordList->obj),passwordList->obj.hashType,&crackingStatus)==true){
+                passwordFound(&(passwordList->obj),counter,passwordList->obj.username,data);
+            }
+
+            passwordList = passwordList->next;
+        }
+
+    }else{ //fake execution
 
         int count = 10;
         trace("This simulation will last approximately 10 secs.", data->worldRank);
@@ -319,7 +346,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
             {"charset"  , required_argument, 0,  0 },
         };
 
-        opt = getopt_long(argc, argv, ":o:ri",long_options, &option_index);
+        opt = getopt_long(argc, argv, ":s:o:w:i",long_options, &option_index);
         
         if (opt == -1) break;
 
@@ -375,6 +402,13 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                 break;
             case 'w':
                 rule_flag = true;
+                dict = calloc(sizeof(char),strlen(optarg)+1);
+                strcpy(dict,optarg);
+                // if optarg isn't a correct string atoi returns 0
+                // add_n = atoi(optarg); 
+                break;  
+            case 's':
+                single_flag = true;
                 // if optarg isn't a correct string atoi returns 0
                 // add_n = atoi(optarg); 
                 break;  
@@ -410,8 +444,8 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
         input_file_path[strlen(argv[optind])+1] = '\0';
     }  
 
-    if(incremental_flag && rule_flag){
-        trace("Usage: -i and -r cannot be used together.\n",data->worldRank);
+    if(incremental_flag && rule_flag && single_flag){
+        trace("Usage: -i and -r and -s cannot be used together.\n",data->worldRank);
         return 1;
     }
 
@@ -425,10 +459,10 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
         return 1;
     }
 
-    if(rule_flag && (add_n==-1 /* || other rules*/) ){
-        trace("Usage: -r needs a rule type parameter.\n    try -r -add-n=5.\n",data->worldRank);
-        return 1;
-    }
+    // if(rule_flag && (add_n==-1 /* || other rules*/) ){
+    //     trace("Usage: -w needs a rule type parameter.\n    try -w dict_file -add-n=5.\n",data->worldRank);
+    //     return 1;
+    // }
 
     return 0;
 }
