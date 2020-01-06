@@ -24,6 +24,8 @@ typedef struct threadData {
     int shouldCrack;
     int worldSize;
     pthread_t threadId;
+    pthread_t firstThread;
+    pthread_t thread2Id;
 } ThreadData;
 
 typedef struct crackingStatus{
@@ -58,5 +60,6 @@ void getDataFromProcess();                                              // data 
 int handleUserOptions(int argc, char const *argv[],ThreadData *data);   // handles program calls' options
 int handleKeyPressed(char key, ThreadData *data);                       // what the name suggests
 void *threadFun(void *vargp);                                           // called by each thread
+void killThemAll();                                                     // cancel threads running in backgorund
 void *crackThemAll(ThreadData *data);                                   // main logic of JTR
 ThreadData *initData();                                                 // just for initialization purposes
