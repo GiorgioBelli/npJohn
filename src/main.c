@@ -137,6 +137,8 @@ void *crackThemAll(ThreadData *data) {
                     break;
                 }
 
+                counter=0;
+
                 passwordListPointer = passwordList;
                 while(passwordListPointer != NULL){
                     counter++;
@@ -236,6 +238,7 @@ void killThemAll(ThreadData *data) {
 void passwordFound(Password* password, int index,char* word,ThreadData* data){
     password->password = calloc(sizeof(char),strlen(word)+1);
     strcpy(password->password,word);
+    crackingStatus.guess++;
     notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
 
@@ -380,10 +383,13 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
                 break; 
             case ':':  
                 if (opt == 'o') {
-                    trace("Usage: The option -o needs an output file as an argument.\n",data->worldRank);  
+                    trace("Usage: The option -o needs an output file as an argument.\n",data->worldRank);
+                    return 1;
                 }
                 if (opt == 'r') {
                     trace("Usage: The option -r needs an integer as an argument.\n",data->worldRank);  
+                    return 1;
+
                 }
                 return 1;  
             case '?':  
@@ -394,7 +400,7 @@ int handleUserOptions(int argc, char const *argv[],ThreadData *data) {
     }
 
     if (optind == argc){
-        printf("Usage: Missing parameter for input_file\n"); 
+        trace("Usage: Missing parameter for input_file\n",data->worldRank); 
         return 1;
     }
     
