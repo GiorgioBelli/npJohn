@@ -42,8 +42,12 @@ typedef struct crackingStatus{
     #include "modes/modes.h"
 #endif
 
-#ifndef UTILS_H
+#ifndef UTILS_IO_H
     #include "utils/io.h"
+#endif
+
+#ifndef UTILS_UTILS_H
+    #include "utils/utils.h"
 #endif
 
 #ifndef HANDLER_H
@@ -62,4 +66,6 @@ int handleKeyPressed(char key, ThreadData *data);                       // what 
 void *threadFun(void *vargp);                                           // called by each thread
 void killThemAll();                                                     // cancel threads running in backgorund
 void *crackThemAll(ThreadData *data);                                   // main logic of JTR
+char* wordFromRange(int word[], char* resultString, char map[], int wordlen);
+
 ThreadData *initData();                                                 // just for initialization purposes

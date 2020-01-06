@@ -159,10 +159,12 @@ char* mapRangeIntoArray(Range* ranges,int rangesLen,int* resLen){
     char* arr = NULL;
     
     for (int k = 0; k < rangesLen; k++){
+        // printf("range[%d] -> min(%d) max(%d)\n",k,ranges[k].min,ranges[k].max);
+
         arr = realloc(arr,sizeof(char)*(arrLen+ranges[k].max-ranges[k].min+1));
         for (int i = ranges[k].min; i <= ranges[k].max; i++){
             arr[arrLen++]=i;
-            // printf("[%d] -> %c\n",arrLen,resArr[arrLen]);
+            // printf("[%d] -> %c\n",arrLen,arr[arrLen-1]);
         }
     }
 

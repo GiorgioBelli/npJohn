@@ -1,2 +1,8 @@
 # VSC settings directory
 .vscode/
+
+# Commons
+build
+
+# macOS
+.DS_Store

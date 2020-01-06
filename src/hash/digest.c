@@ -101,7 +101,7 @@ char* sha256(char* plaintext,char* hash, char* salt) {
 char* unixCrypt(char* key,char* hash, char* salt){
     // char* mdString = (char*) calloc(sizeof(char),CRYPT_DIGEST_LENGTH+1);
     
-    strncpy(hash,crypt(key,salt),CRYPT_DIGEST_LENGTH);
+    strcpy(hash,crypt(key,salt));
 
     print("crypt digest: %s\n",hash);
 
