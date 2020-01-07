@@ -197,7 +197,7 @@ int* parallel_incrementalNextWord(int* word, int wordLen,char* range, int rangeL
             }
             else {
                 if(word[i] == rangeLen-1){
-                    word[i] = offset;
+                    word[i] = 0;
                 }
                 else{
                     word[i]++;

@@ -18,8 +18,8 @@
     #include "../hash/digest.h"
 #endif
 
-#define HANDLE_H
-#define MAXCHAR 1000
+#define HANDLER_H
+#define MAXCHAR 1024
 
 typedef struct passwordList{  
     Password obj; 

@@ -25,7 +25,8 @@ char* input_file_path = NULL;
 Range* ranges = NULL;
 int rangesLen = 0;
 CrackingStatus crackingStatus = {0,0,0,NULL};
-
+PasswordList *passGuessed = NULL;
+PasswordList* passwordList = NULL;
 
 int main(int argc, char const *argv[]) {
 
@@ -79,7 +80,7 @@ void *crackThemAll(ThreadData *data) {
 
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
-    PasswordList* passwordList = createStruct(input_file_path);
+    passwordList = createStruct(input_file_path);
 
     //incremental mode 
     if(incremental_flag){
@@ -269,10 +270,10 @@ void passwordFound(Password* password, int index,char* word,ThreadData* data,boo
         password->password = calloc(sizeof(char),strlen(word)+1);
         strcpy(password->password,word);
     }
+    //markAsFound(index,data);
     crackingStatus.guess++;
     notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
-
 }
 
 // This is a very inefficient way to bcast to all other nodes the found psw but I had no clue how.
@@ -280,7 +281,7 @@ void passwordFound(Password* password, int index,char* word,ThreadData* data,boo
 // first the type of the msg is sent as well as the data that can be then safely parsed.
 void notifyPasswordFound(ThreadData *data, int passwordIndex) {
     for (int i=0; i<data->worldSize; i++) {
-        if (i!=data->worldRank) {
+        if (i!=data->worldRank){
             MPI_Send(&PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&passwordIndex, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
@@ -321,7 +322,7 @@ void *threadFun(void *vargp) {
             // MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
             int passwordIndex = -1;
             MPI_Recv(&passwordIndex, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            markAsFound(passwordIndex,data);
+            //markAsFound(passwordIndex,data);
             //TODO there is an error with received passwordIndex
         }
     }   
@@ -329,7 +330,35 @@ void *threadFun(void *vargp) {
 
 void markAsFound(int passwordIndex,ThreadData* data) {
 
-    //TODO this function should move the password found from passwordList to foundPasswordList
+    PasswordList *currentPointer = passwordList;
+
+    if(passwordIndex == 1){
+        passwordList = passwordList->next;
+
+        currentPointer->next = NULL;
+    }else{
+        //faccio -2 in quanto l'index parte da 1 e poi voglio fermarmi 1 posizione prima
+        for (int i = 0; i < passwordIndex-2; i++){
+            currentPointer = currentPointer->next;
+        }
+        PasswordList *bridge = currentPointer;
+        currentPointer = currentPointer->next;
+        bridge->next = currentPointer->next;
+        currentPointer->next = NULL;
+        bridge = NULL;
+        free(bridge);
+    }
+
+    if( passGuessed == NULL ){
+        passGuessed = currentPointer;
+    }else{
+        PasswordList* current = passGuessed;
+        while( current->next ){
+            current = current->next;
+        }
+        current->next = currentPointer;
+    }
+
     printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
 }
 
