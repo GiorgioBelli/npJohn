@@ -399,7 +399,7 @@ void passwordFound(Password *password, int index, char *word,
     password->password = calloc(sizeof(char), strlen(word) + 1);
     strcpy(password->password, word);
     crackingStatus.guess++;
-    markAsFound(index, data);
+    //markAsFound(index, data);
     notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
 }
