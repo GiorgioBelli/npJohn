@@ -1,3 +1,0 @@
-#! /bin/bash
-# SYNOPSIS mjohn -np <X> (TODO: -hosts <host1,host2,..>) -i <input_file> [-o <output_file>] ...
-mpirun $1 $2 ./build/main.o ${@:3}
