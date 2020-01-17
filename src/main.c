@@ -55,8 +55,14 @@ int main(int argc, char const *argv[]) {
         pthread_join(data->thread2Id, NULL);
     }
 
-    // TODO: Before printing the msg below check if there is data to be saved into a file.
-    trace("\nYour results were stored in the file ... \n", data->worldRank);
+    // TODO: Before printing the msg bpasswordelow check if there is data to be saved into a file.
+    if(out_file_flag){
+        trace("\nYour results were stored in the output file... \n", data->worldRank);
+        if(data->worldRank==0) write_final_output(passGuessed,output_file_path);
+    }
+
+    trace("\nExecution terminated correctly \n", data->worldRank);
+
 
     // Terminate MPI and hence the program
     MPI_Finalize();
@@ -145,7 +151,6 @@ void *crackThemAll(ThreadData *data) {
                     digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
 
                     if(strcmp(digest,passwordListPointer->obj.hash)==0) {
-                        // printf("found password with index: %d\n",counter);
                         passwordFound(&(passwordListPointer->obj),counter,alphaWord,data,true);
                     }
                     passwordListPointer = passwordListPointer->next;
@@ -270,7 +275,7 @@ void passwordFound(Password* password, int index,char* word,ThreadData* data,boo
         password->password = calloc(sizeof(char),strlen(word)+1);
         strcpy(password->password,word);
     }
-    //markAsFound(index,data);
+    markAsFound(index,data);
     crackingStatus.guess++;
     notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
@@ -322,7 +327,7 @@ void *threadFun(void *vargp) {
             // MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);    // probe the msg before collecting it
             int passwordIndex = -1;
             MPI_Recv(&passwordIndex, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            //markAsFound(passwordIndex,data);
+            markAsFound(passwordIndex,data);
             //TODO there is an error with received passwordIndex
         }
     }   
