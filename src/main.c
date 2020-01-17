@@ -58,7 +58,7 @@ int main(int argc, char const *argv[]) {
     // TODO: Before printing the msg bpasswordelow check if there is data to be saved into a file.
     if(out_file_flag){
         trace("\nYour results were stored in the output file... \n", data->worldRank);
-        if(data->worldRank==0) write_final_output(passGuessed, passwordList, output_file_path, data->worldRank);
+        write_final_output(passGuessed, passwordList, output_file_path, data->worldRank, data->worldSize);
     }
 
     trace("\nExecution terminated correctly \n", data->worldRank);

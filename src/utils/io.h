@@ -27,6 +27,6 @@
 /**
  * Writes the final output in a file on a given path.
  */
-int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* output_path, int worldRank);
+int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* output_path, int worldRank, int worldSize);
 
 #include "io.c"

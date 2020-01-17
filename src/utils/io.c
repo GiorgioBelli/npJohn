@@ -1,7 +1,7 @@
 int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* output_path, int worldRank, int worldSize){
     //FILE *f = fopen(output_path, "w");
-    char tempName[15];
-    sprintf(tempName, "temp_%d.txt", worldRank);
+    char tempName[20];
+    sprintf(tempName, "/tmp/temp_%d", worldRank);
 
     FILE *f = fopen(tempName, "w");
     if (f == NULL){
@@ -11,7 +11,9 @@ int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* 
 
     PasswordList *current = headGuessed;
     while (current != NULL){
-        fprintf(f, "%s : %s\n", current->obj.username, current->obj.password);
+        if(current->obj.password!=NULL){
+            fprintf(f, "%s : %s\n", current->obj.username, current->obj.password);
+        }
         current = current->next;
     }
     fclose(f);
@@ -26,12 +28,12 @@ int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* 
             current = current->next;
         }
 
-        for (int i = 0; i <= worldSize ; i++){
-            sprintf(tempName, "temp_%d.txt", worldRank);
-            FILE *t = fopen(tempName, "w");
+        for (int i = 0; i < worldSize ; i++){
+            sprintf(tempName, "/tmp/temp_%d", i);
+            FILE *t = fopen(tempName, "r");
 
-            char row[50];
-            while (fgets(row, 50, t) != NULL){
+            char row[128];
+            while (fgets(row, 128, t) != NULL){
                 fprintf(ff, "%s", row);
             }
             fclose(t);
