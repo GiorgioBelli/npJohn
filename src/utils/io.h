@@ -5,6 +5,11 @@
     #include <stdio.h>
 #endif
 
+#ifndef MPI_H
+    #define MPI_H
+    #include <mpi.h>
+#endif
+
 #ifndef STDLIB_H
     #define STDLIB_H
     #include <stdlib.h>
@@ -22,6 +27,6 @@
 /**
  * Writes the final output in a file on a given path.
  */
-int write_final_output(PasswordList* head, char* output_path);
+int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* output_path, int worldRank);
 
 #include "io.c"

@@ -1,3 +1,5 @@
+#define MAIN_H 
+
 #ifndef MPI_H
     #define MPI_H
     #include <mpi.h>

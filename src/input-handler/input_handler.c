@@ -155,7 +155,6 @@ DictList* importFileDict(char* fileName){
 
     while (fgets(str, MAXCHAR, fp) != NULL){
 
-
         DictList* node = (struct dictList *)malloc(sizeof(struct dictList));
 
         node->word = (char *)malloc(sizeof(char)*strlen(str));
