@@ -11,8 +11,8 @@ int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* 
 
     PasswordList *current = headGuessed;
     while (current != NULL){
-        if(current->obj.password!=NULL){
-            fprintf(f, "%s : %s\n", current->obj.username, current->obj.password);
+        if(current->obj->password!=NULL){
+            fprintf(f, "%s : %s\n", current->obj->username, current->obj->password);
         }
         current = current->next;
     }
@@ -24,7 +24,7 @@ int write_final_output(PasswordList* headGuessed, PasswordList* headList, char* 
         FILE *ff = fopen(output_path, "w");
         current = headList;
         while (current != NULL){
-            if( current->obj.hashType == NOPASSWORD_t ){ fprintf(ff, "%s : NOPASSWORD\n", current->obj.username); }
+            if( current->obj->hashType == NOPASSWORD_t ){ fprintf(ff, "%s : NOPASSWORD\n", current->obj->username); }
             current = current->next;
         }
 

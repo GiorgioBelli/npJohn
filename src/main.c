@@ -114,17 +114,15 @@ void *crackThemAll(ThreadData *data) {
             int counter = 0;
 
             char* digest = NULL;
-            HASH_TYPES hashType = NONETYPE_t;
 
             PasswordList* passwordListPointer = passwordList;
             while(passwordListPointer != NULL){
                 counter++;
-                hashType = getTypeHash(&(passwordListPointer->obj));
-                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
-                digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj->hashType)+1));
+                digestFactory(alphaWord,passwordListPointer->obj->salt, passwordListPointer->obj->hashType, digest);
 
-                if(strcmp(digest,passwordListPointer->obj.hash)==0) {
-                    passwordFound(&(passwordListPointer->obj),counter,alphaWord,data,false);
+                if(strcmp(digest,passwordListPointer->obj->hash)==0) {
+                    passwordFound((passwordListPointer->obj),counter,alphaWord,data,false);
                 }
                 passwordListPointer = passwordListPointer->next;
             }
@@ -146,12 +144,11 @@ void *crackThemAll(ThreadData *data) {
                 passwordListPointer = passwordList;
                 while(passwordListPointer != NULL){
                     counter++;
-                    hashType = getTypeHash(&(passwordListPointer->obj));
-                    digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
-                    digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
+                    digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj->hashType)+1));
+                    digestFactory(alphaWord,passwordListPointer->obj->salt, passwordListPointer->obj->hashType, digest);
 
-                    if(strcmp(digest,passwordListPointer->obj.hash)==0) {
-                        passwordFound(&(passwordListPointer->obj),counter,alphaWord,data,true);
+                    if(strcmp(digest,passwordListPointer->obj->hash)==0) {
+                        passwordFound((passwordListPointer->obj),counter,alphaWord,data,true);
                     }
                     passwordListPointer = passwordListPointer->next;
                 }
@@ -176,7 +173,6 @@ void *crackThemAll(ThreadData *data) {
         while(dictList != NULL){
 
             char* digest = NULL;
-            HASH_TYPES hashType = NONETYPE_t;
 
             int counter = 0;
             copyList = passwordList;
@@ -188,16 +184,16 @@ void *crackThemAll(ThreadData *data) {
                 counter ++;
                 
                 if(dictWordCrack(
-                    &copyList->obj,
+                    copyList->obj,
                     dictList->word,
-                    copyList->obj.hashType,
+                    copyList->obj->hashType,
                     rule,
                     ranges,
                     rangesLen,
                     add_n,
                     &crackingStatus
                 )){
-                    passwordFound(&(copyList->obj),counter,dictList->word,data,false);
+                    passwordFound((copyList->obj),counter,dictList->word,data,false);
                 }
 
                 copyList = copyList->next;
@@ -217,13 +213,11 @@ void *crackThemAll(ThreadData *data) {
 
         for (int g = 0; g < data->worldRank; g++) passwordListPointer = passwordListPointer->next;
 
-
-
         while(passwordListPointer != NULL){
             counter++;
             
-            if(singleCrack(&(passwordListPointer->obj),passwordListPointer->obj.hashType,&crackingStatus)==true){
-                passwordFound(&(passwordListPointer->obj),counter,passwordListPointer->obj.username,data,false);
+            if(singleCrack((passwordListPointer->obj),passwordListPointer->obj->hashType,&crackingStatus)==true){
+                passwordFound((passwordListPointer->obj),counter,passwordListPointer->obj->username,data,false);
             }
 
             for (int g = 0; g < data->worldSize && passwordListPointer!=NULL; g++) passwordListPointer = passwordListPointer->next;
@@ -336,30 +330,34 @@ void markAsFound(int passwordIndex,ThreadData* data) {
     PasswordList *currentPointer = passwordList;
 
     if(passwordIndex == 1){
-        passwordList = passwordList->next;
-
-        currentPointer->next = NULL;
+        currentPointer->found = true;
     }else{
         //faccio -2 in quanto l'index parte da 1 e poi voglio fermarmi 1 posizione prima
-        for (int i = 0; i < passwordIndex-2; i++){
+        for (int i = 0; i < passwordIndex-1; i++){
             currentPointer = currentPointer->next;
         }
-        PasswordList *bridge = currentPointer;
+        /*PasswordList *bridge = currentPointer;
         currentPointer = currentPointer->next;
         bridge->next = currentPointer->next;
         currentPointer->next = NULL;
         bridge = NULL;
-        free(bridge);
+        free(bridge);*/
+        currentPointer->found = true;
     }
 
     if( passGuessed == NULL ){
-        passGuessed = currentPointer;
+        passGuessed = (struct passwordList *)malloc(sizeof(struct passwordList));
+        passGuessed->obj = currentPointer->obj;
+        passGuessed->next = NULL;
     }else{
         PasswordList* current = passGuessed;
         while( current->next ){
             current = current->next;
         }
-        current->next = currentPointer;
+        PasswordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));
+        node->obj = currentPointer->obj;
+        node->next = NULL;
+        current->next = node;
     }
 
     printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
