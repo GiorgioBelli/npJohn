@@ -181,10 +181,12 @@ void freePass(PasswordList* head){
     PasswordList* current = head;
     while(head){
         
-        free(head->obj->hash);
-        free(head->obj->username);
-        free(head->obj->password);
-        free(head->obj->salt);
+        if(head->obj == NULL){
+            free(head->obj->hash);
+            free(head->obj->username);
+            free(head->obj->password);
+            free(head->obj->salt);
+        }
         
         current = head;
         head = head->next;
