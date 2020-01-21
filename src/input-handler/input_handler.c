@@ -123,8 +123,9 @@ PasswordList* createStruct(char* fileName){
         }
 
         PasswordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));
-        node->obj = *obj;
+        node->obj = obj;
         node->next = NULL;
+        node->found = false;
         
         if( head == NULL ){
             head = node;
@@ -155,7 +156,6 @@ DictList* importFileDict(char* fileName){
 
     while (fgets(str, MAXCHAR, fp) != NULL){
 
-
         DictList* node = (struct dictList *)malloc(sizeof(struct dictList));
 
         node->word = (char *)malloc(sizeof(char)*strlen(str));
@@ -181,10 +181,12 @@ void freePass(PasswordList* head){
     PasswordList* current = head;
     while(head){
         
-        free(head->obj.hash);
-        free(head->obj.username);
-        free(head->obj.password);
-        free(head->obj.salt);
+        if(head->obj == NULL){
+            free(head->obj->hash);
+            free(head->obj->username);
+            free(head->obj->password);
+            free(head->obj->salt);
+        }
         
         current = head;
         head = head->next;

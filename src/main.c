@@ -25,7 +25,8 @@ char* input_file_path = NULL;
 Range* ranges = NULL;
 int rangesLen = 0;
 CrackingStatus crackingStatus = {0,0,0,NULL};
-
+PasswordList *passGuessed = NULL;
+PasswordList* passwordList = NULL;
 
 int main(int argc, char const *argv[]) {
 
@@ -54,8 +55,14 @@ int main(int argc, char const *argv[]) {
         pthread_join(data->thread2Id, NULL);
     }
 
-    // TODO: Before printing the msg below check if there is data to be saved into a file.
-    trace("\nYour results were stored in the file ... \n", data->worldRank);
+    // TODO: Before printing the msg bpasswordelow check if there is data to be saved into a file.
+    if(out_file_flag){
+        trace("\nYour results were stored in the output file... \n", data->worldRank);
+        write_final_output(passGuessed, passwordList, output_file_path, data->worldRank, data->worldSize);
+    }
+
+    trace("\nExecution terminated correctly \n", data->worldRank);
+
 
     // Terminate MPI and hence the program
     MPI_Finalize();
@@ -79,7 +86,7 @@ void *crackThemAll(ThreadData *data) {
 
     trace("You can stop the program at any time by pressing 'q'.", data->worldRank);
 
-    PasswordList* passwordList = createStruct(input_file_path);
+    passwordList = createStruct(input_file_path);
 
     //incremental mode 
     if(incremental_flag){
@@ -107,17 +114,15 @@ void *crackThemAll(ThreadData *data) {
             int counter = 0;
 
             char* digest = NULL;
-            HASH_TYPES hashType = NONETYPE_t;
 
             PasswordList* passwordListPointer = passwordList;
             while(passwordListPointer != NULL){
                 counter++;
-                hashType = getTypeHash(&(passwordListPointer->obj));
-                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
-                digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
+                digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj->hashType)+1));
+                digestFactory(alphaWord,passwordListPointer->obj->salt, passwordListPointer->obj->hashType, digest);
 
-                if(strcmp(digest,passwordListPointer->obj.hash)==0) {
-                    passwordFound(&(passwordListPointer->obj),counter,alphaWord,data,false);
+                if(strcmp(digest,passwordListPointer->obj->hash)==0) {
+                    passwordFound((passwordListPointer->obj),counter,alphaWord,data,false);
                 }
                 passwordListPointer = passwordListPointer->next;
             }
@@ -139,13 +144,11 @@ void *crackThemAll(ThreadData *data) {
                 passwordListPointer = passwordList;
                 while(passwordListPointer != NULL){
                     counter++;
-                    hashType = getTypeHash(&(passwordListPointer->obj));
-                    digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj.hashType)+1));
-                    digestFactory(alphaWord,passwordListPointer->obj.salt, passwordListPointer->obj.hashType, digest);
+                    digest = realloc(digest,(sizeof(char)*2*getDigestLen(passwordListPointer->obj->hashType)+1));
+                    digestFactory(alphaWord,passwordListPointer->obj->salt, passwordListPointer->obj->hashType, digest);
 
-                    if(strcmp(digest,passwordListPointer->obj.hash)==0) {
-                        // printf("found password with index: %d\n",counter);
-                        passwordFound(&(passwordListPointer->obj),counter,alphaWord,data,true);
+                    if(strcmp(digest,passwordListPointer->obj->hash)==0) {
+                        passwordFound((passwordListPointer->obj),counter,alphaWord,data,true);
                     }
                     passwordListPointer = passwordListPointer->next;
                 }
@@ -170,7 +173,6 @@ void *crackThemAll(ThreadData *data) {
         while(dictList != NULL){
 
             char* digest = NULL;
-            HASH_TYPES hashType = NONETYPE_t;
 
             int counter = 0;
             copyList = passwordList;
@@ -182,16 +184,16 @@ void *crackThemAll(ThreadData *data) {
                 counter ++;
                 
                 if(dictWordCrack(
-                    &copyList->obj,
+                    copyList->obj,
                     dictList->word,
-                    copyList->obj.hashType,
+                    copyList->obj->hashType,
                     rule,
                     ranges,
                     rangesLen,
                     add_n,
                     &crackingStatus
                 )){
-                    passwordFound(&(copyList->obj),counter,dictList->word,data,false);
+                    passwordFound((copyList->obj),counter,dictList->word,data,false);
                 }
 
                 copyList = copyList->next;
@@ -211,13 +213,11 @@ void *crackThemAll(ThreadData *data) {
 
         for (int g = 0; g < data->worldRank; g++) passwordListPointer = passwordListPointer->next;
 
-
-
         while(passwordListPointer != NULL){
             counter++;
             
-            if(singleCrack(&(passwordListPointer->obj),passwordListPointer->obj.hashType,&crackingStatus)==true){
-                passwordFound(&(passwordListPointer->obj),counter,passwordListPointer->obj.username,data,false);
+            if(singleCrack((passwordListPointer->obj),passwordListPointer->obj->hashType,&crackingStatus)==true){
+                passwordFound((passwordListPointer->obj),counter,passwordListPointer->obj->username,data,false);
             }
 
             for (int g = 0; g < data->worldSize && passwordListPointer!=NULL; g++) passwordListPointer = passwordListPointer->next;
@@ -236,8 +236,6 @@ void *crackThemAll(ThreadData *data) {
 
         }
     }
-
-    freePass(passwordList);
 
     // Once here, the work is ended and the other threads are no longer necessary.
     killThemAll(data);
@@ -269,10 +267,10 @@ void passwordFound(Password* password, int index,char* word,ThreadData* data,boo
         password->password = calloc(sizeof(char),strlen(word)+1);
         strcpy(password->password,word);
     }
+    markAsFound(index,data);
     crackingStatus.guess++;
     notifyPasswordFound(data, index);  // notify other cores
     printMatch(password);
-
 }
 
 // This is a very inefficient way to bcast to all other nodes the found psw but I had no clue how.
@@ -280,7 +278,7 @@ void passwordFound(Password* password, int index,char* word,ThreadData* data,boo
 // first the type of the msg is sent as well as the data that can be then safely parsed.
 void notifyPasswordFound(ThreadData *data, int passwordIndex) {
     for (int i=0; i<data->worldSize; i++) {
-        if (i!=data->worldRank) {
+        if (i!=data->worldRank){
             MPI_Send(&PSW_FOUND, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
             MPI_Send(&passwordIndex, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
@@ -329,7 +327,39 @@ void *threadFun(void *vargp) {
 
 void markAsFound(int passwordIndex,ThreadData* data) {
 
-    //TODO this function should move the password found from passwordList to foundPasswordList
+    PasswordList *currentPointer = passwordList;
+
+    if(passwordIndex == 1){
+        currentPointer->found = true;
+    }else{
+        //faccio -2 in quanto l'index parte da 1 e poi voglio fermarmi 1 posizione prima
+        for (int i = 0; i < passwordIndex-1; i++){
+            currentPointer = currentPointer->next;
+        }
+        /*PasswordList *bridge = currentPointer;
+        currentPointer = currentPointer->next;
+        bridge->next = currentPointer->next;
+        currentPointer->next = NULL;
+        bridge = NULL;
+        free(bridge);*/
+        currentPointer->found = true;
+    }
+
+    if( passGuessed == NULL ){
+        passGuessed = (struct passwordList *)malloc(sizeof(struct passwordList));
+        passGuessed->obj = currentPointer->obj;
+        passGuessed->next = NULL;
+    }else{
+        PasswordList* current = passGuessed;
+        while( current->next ){
+            current = current->next;
+        }
+        PasswordList* node = (struct passwordList *)malloc(sizeof(struct passwordList));
+        node->obj = currentPointer->obj;
+        node->next = NULL;
+        current->next = node;
+    }
+
     printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
 }
 

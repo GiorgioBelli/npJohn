@@ -18,12 +18,18 @@
     #include "../hash/digest.h"
 #endif
 
-#define HANDLE_H
-#define MAXCHAR 1000
+#ifndef STDBOOL_H
+    #define STDBOOL_H
+    #include <stdbool.h>
+#endif
+
+#define HANDLER_H
+#define MAXCHAR 1024
 
 typedef struct passwordList{  
-    Password obj; 
+    Password *obj; 
     struct passwordList *next; 
+    bool found;
 }PasswordList;
 
 typedef struct dictList{

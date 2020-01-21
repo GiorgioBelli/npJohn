@@ -7,18 +7,22 @@ typedef enum HASH_TYPES{
 } HASH_TYPES;
 
 #ifndef STDBOOL_H
+    #define STDBOOL_H
     #include <stdbool.h>
 #endif
 
 #ifndef STDIO_H
+    #define STDIO_H
     #include <stdio.h>
 #endif
 
 #ifndef STDLIB_H
+    #define STDLIB_H
     #include <stdlib.h>
 #endif
 
 #ifndef STRING_H
+    #define STRING_H
     #include <string.h>
 #endif
 
@@ -27,14 +31,17 @@ typedef enum HASH_TYPES{
 #endif
 
 #ifndef MD5_H
+    #define MD5_H
     #include <openssl/md5.h>
 #endif
 
 #ifndef SHA_H
+    #define SHA_H
     #include <openssl/sha.h>
 #endif
 
 #ifndef CRYPT_H
+    #define CRYPT_H
     #include <crypt.h>
 #endif
 
