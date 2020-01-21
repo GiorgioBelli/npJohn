@@ -73,5 +73,11 @@ void *threadFun(void *vargp);                                           // calle
 void killThemAll();                                                     // cancel threads running in backgorund
 void *crackThemAll(ThreadData *data);                                   // main logic of JTR
 char* wordFromRange(int word[], char* resultString, char map[], int wordlen);
+void passwordFound(Password* password, int index,char* word,ThreadData* data,bool setPassword);
+void notifyPasswordFound(ThreadData *data, int passwordIndex);
+void printMatch(Password* password);
+void printStatus(starting_time,guess,try);
+void markAsFound(int passwordIndex,ThreadData* data);
+
 
 ThreadData *initData();                                                 // just for initialization purposes
