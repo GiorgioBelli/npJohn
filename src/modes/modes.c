@@ -91,6 +91,7 @@ bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES
     digestFactory(dictWord,password->salt,hashType,test);
 
     crackingStatus->try++;
+    crackingStatus->currentWord = dictWord;
 
     if(strcmp(test,password->hash)==0){
         free(test);
@@ -126,6 +127,7 @@ bool dictWordCrack(Password* password, char* dictWord, HASH_TYPES hashType,RULES
         digestFactory(concatWord,password->salt,hashType, test);
 
         crackingStatus->try++;
+        crackingStatus->currentWord = concatWord;
 
         if(strcmp(test,password->hash)==0){
             password->password = calloc(sizeof(char),dictWordLen+incrementalLen+1);

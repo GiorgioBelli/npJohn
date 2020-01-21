@@ -1,2 +1,0 @@
-krishna::53204:532:Cpr E 532 Student:/home/issl/532/krishna:/bin/tcsh
-jwcarter:$1$salt$HpUlZlNIV6TH2:53205:532:Cpr E 532 Student:/home/issl/532/jwcarter:/bin/tcsh
