@@ -286,7 +286,7 @@ void notifyPasswordFound(ThreadData *data, int passwordIndex) {
 }
 
 void printMatch(Password* password){
-    printf("%s: %s\n",password->username,password->password);
+    printf("%s\t\t(%s)\n",password->password,password->username);
     fflush(stdout);
 }
 
@@ -360,7 +360,7 @@ void markAsFound(int passwordIndex,ThreadData* data) {
         current->next = node;
     }
 
-    printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
+    //printf("[%d] received notification for password n. %d\n",data->worldRank,passwordIndex);
 }
 
 
