@@ -1,0 +1,38 @@
+Usage: npjohn [OPTION]... PASSWORD_FILE
+
+Distributed John The Ripper version using mpi paradigm.
+
+Modes of Operation
+  -i                        Incremental mode, requires a range specificable with
+                            --charset option. 
+                            Optionally can be specified the --max-len and --min-len for generation.
+  -s                        Single mode, tries for each password the respective username. 
+  -w                        Wordlist or Dictionary mode, requires a wordlist FILE as parameter
+                            and can be specified a RULE to generate other words starting from the FILE.
+
+RULES
+  -add-n=NUM                Specifies the number of chars that will be appended to dictionary words.
+                            It also requires --charset option.
+
+OPTIONS
+  -h                        Display this help and exit
+  -np                       Specifies the number of cores that will be used for execution.
+                            If not provided the maximum availabe core will be used.
+  -o                        Take as parameter a file path (if doesn't exist will be created).
+                            The file will be filled with guessed passwords.
+  --charset=LIST            Permitt to specify a LIST of ranges(ASCII) with the sintax:
+                                start_range-end_range,start_range-end_range
+                                example: --charset=65-90,97-122,48-57 -> [A-Za-z0-9]
+  --max-len=LEN             Takes an integer and specify the max len for password generation
+  --min-len=LEN             Takes an integer and specify the mix len for password generation
+  
+
+EXAMPLES
+
+npjohn -np 2 -i --charset=97-122 --max-len=5 -o ~/Desktop/outfile ./src/input-handler/passwd.txt
+
+npjohn -np 2 -w ./src/input-handler/dict --add-n=4 --charset=97-122 -o ~/Desktop/outfile ./src/input-handler/passwd.txt
+
+npjohn -np 2 -s -o ~/Desktop/outfile ./src/input-handler/passwd.txt
+
+npjohn -np 2 -w ./src/input-handler/dict -o ~/Desktop/outfile ./src/input-handler/passwd.txt
