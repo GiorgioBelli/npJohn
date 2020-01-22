@@ -96,7 +96,7 @@ void *crackThemAll(ThreadData *data) {
         res = mapRangeIntoArray(ranges,rangesLen,&resLen); //maps ranges into a linear array
 
         if(incremental_min_len==-1) incremental_min_len=1;
-        if(incremental_max_len==-1) incremental_min_len=8; //if not provided = 8
+        if(incremental_max_len==-1) incremental_max_len=8; //if not provided = 8
 
         char* alphaWord = NULL;
 
